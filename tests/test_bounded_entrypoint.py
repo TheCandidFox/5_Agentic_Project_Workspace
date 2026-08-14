@@ -49,6 +49,8 @@ def test_bounded_status_applies_additive_schema_without_agent_dispatch(tmp_path)
         "0001_bootstrap_commands_validations",
         "0002_transactional_changes",
         "0003_bounded_autonomy",
+        "0004_research_provenance",
+        "0005_acceptance_truth",
     )
 
 
@@ -85,4 +87,3 @@ def test_bounded_full_verification_runs_offline_suite_and_reports(tmp_path, caps
     assert "Bounded autonomy result: PASS" in output
     assert "no provider calls" in output
     assert str(root) not in output
-

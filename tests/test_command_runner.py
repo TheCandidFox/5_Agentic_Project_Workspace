@@ -437,3 +437,34 @@ def test_writes_redacted_durable_jsonl_event(tmp_path):
     assert event["task_id"] == "task-event"
     assert event["cwd"] == "."
     assert result.stdout.strip() == "[REDACTED]"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX executable-link behavior")
+def test_preserves_allowlisted_executable_symlink_and_rechecks_target(tmp_path):
+    root = tmp_path / "candidate"
+    root.mkdir()
+    launcher = tmp_path / "venv" / "bin" / "python"
+    launcher.parent.mkdir(parents=True)
+    launcher.symlink_to(Path(sys.executable).resolve())
+    guard = WorkspaceGuard(root)
+    rule = ExecutableRule(
+        alias="python",
+        executable=launcher,
+        allowed_argument_prefixes=(("-c",),),
+    )
+    runner = CommandRunner(guard, CommandPolicy(rules=(rule,)))
+
+    result = runner.run(
+        CommandRequest(argv=("python", "-c", "print('venv-launch')"))
+    )
+
+    assert result.outcome == CommandOutcome.PASS
+    assert result.executable == str(launcher.absolute())
+    assert result.stdout == "venv-launch\n"
+
+    replacement = tmp_path / "replacement-python"
+    replacement.symlink_to("/bin/false")
+    launcher.unlink()
+    launcher.symlink_to(replacement.resolve())
+    with pytest.raises(CommandDenied, match="target changed"):
+        runner.run(CommandRequest(argv=("python", "-c", "print('denied')")))

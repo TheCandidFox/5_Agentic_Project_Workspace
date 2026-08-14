@@ -114,6 +114,9 @@ class IdempotentCommandRunner:
                 str(self.runner.guard.root),
                 "<workspace>",
             ).replace(
+                str(description["launch_executable"]),
+                f"<executable:{description['executable_alias']}>",
+            ).replace(
                 str(description["resolved_executable"]),
                 f"<executable:{description['executable_alias']}>",
             )
@@ -149,7 +152,7 @@ class IdempotentCommandRunner:
         return CommandResult(
             outcome=CommandOutcome(record["outcome"]),
             argv=tuple(str(value) for value in request["argv"]),
-            executable=str(current_description["resolved_executable"]),
+            executable=str(current_description["launch_executable"]),
             cwd=str(record["cwd"]),
             exit_code=record["exit_code"],
             stdout=record["stdout"] or "",

@@ -36,6 +36,8 @@ def test_additive_migration_applies_once_and_preserves_existing_events(tmp_path)
         "0001_bootstrap_commands_validations",
         "0002_transactional_changes",
         "0003_bounded_autonomy",
+        "0004_research_provenance",
+        "0005_acceptance_truth",
     )
     assert first.schema_migration_ids() == first.applied_schema_migrations
 
@@ -46,6 +48,8 @@ def test_additive_migration_applies_once_and_preserves_existing_events(tmp_path)
         "0001_bootstrap_commands_validations",
         "0002_transactional_changes",
         "0003_bounded_autonomy",
+        "0004_research_provenance",
+        "0005_acceptance_truth",
     )
     assert reopened.integrity_check() == "ok"
     with reopened.connect() as con:
@@ -66,6 +70,15 @@ def test_additive_migration_applies_once_and_preserves_existing_events(tmp_path)
         "patch_transactions",
         "patch_files",
         "git_checkpoints",
+        "research_runs",
+        "research_sources",
+        "research_claims",
+        "research_citations",
+        "acceptance_runs",
+        "acceptance_evidence",
+        "acceptance_claims",
+        "acceptance_criteria",
+        "acceptance_constraints",
     } <= tables
     assert preserved == 1
 
@@ -99,13 +112,15 @@ def test_concurrent_ledger_initialization_records_migration_once(tmp_path):
         results = list(executor.map(initialize, (1, 2)))
 
     applied_counts = [len(applied) for applied, _ in results]
-    assert sorted(applied_counts) == [0, 3]
+    assert sorted(applied_counts) == [0, 5]
     assert all(
         migration_ids
         == (
             "0001_bootstrap_commands_validations",
             "0002_transactional_changes",
             "0003_bounded_autonomy",
+            "0004_research_provenance",
+            "0005_acceptance_truth",
         )
         for _, migration_ids in results
     )

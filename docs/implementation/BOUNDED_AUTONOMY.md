@@ -161,11 +161,13 @@ The tests cover:
 6. The controls are application boundaries, not an operating-system sandbox
    for hostile generated code.
 
-## Next bootstrap package
+## Subsequent bootstrap package
 
-Add current-authoritative-documentation research with provenance, followed by
-the acceptance/truth abstraction and final bootstrap acceptance review. A live
-repair-agent adapter should be introduced only with explicit provider choice,
-structured-output validation, populated budgets, and a deliberately approved
-paid test.
+Phase 6 now adds current-authoritative-documentation research with provenance,
+the acceptance/truth abstraction, and the final ten-gate bootstrap review. See
+`AUTHORITATIVE_RESEARCH.md`, `ACCEPTANCE_TRUTH.md`, and
+`PHASE_6_FINAL_BOOTSTRAP.md`.
 
+A live repair-agent adapter remains deferred. It may be introduced only with an
+explicit provider choice, structured-output validation, populated budgets, and
+a deliberately approved paid test in a later phase.

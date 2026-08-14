@@ -192,6 +192,173 @@ SCHEMA_MIGRATIONS: tuple[tuple[str, str], ...] = (
         ON repair_attempts(run_id, attempt_number);
         """,
     ),
+    (
+        "0004_research_provenance",
+        """
+        CREATE TABLE IF NOT EXISTS research_runs (
+            run_id TEXT PRIMARY KEY,
+            task_id TEXT NOT NULL,
+            objective TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            request_sha256 TEXT NOT NULL,
+            status TEXT NOT NULL,
+            retrieval_mode TEXT NOT NULL,
+            require_primary_source INTEGER NOT NULL,
+            source_count INTEGER NOT NULL DEFAULT 0,
+            claim_count INTEGER NOT NULL DEFAULT 0,
+            request_count INTEGER NOT NULL DEFAULT 0,
+            bytes_retrieved INTEGER NOT NULL DEFAULT 0,
+            cost_usd REAL NOT NULL DEFAULT 0,
+            error TEXT,
+            started_at TEXT NOT NULL,
+            completed_at TEXT,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_runs_task_started
+        ON research_runs(task_id, started_at);
+
+        CREATE TABLE IF NOT EXISTS research_sources (
+            source_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            source_key TEXT NOT NULL,
+            ordinal INTEGER NOT NULL,
+            requested_url TEXT NOT NULL,
+            canonical_url TEXT NOT NULL,
+            title TEXT NOT NULL,
+            source_type TEXT NOT NULL,
+            is_primary INTEGER NOT NULL,
+            capture_method TEXT NOT NULL,
+            retrieved_at TEXT NOT NULL,
+            applicable_version TEXT,
+            applicable_date TEXT,
+            content_type TEXT NOT NULL,
+            status_code INTEGER NOT NULL,
+            content_sha256 TEXT NOT NULL,
+            content_text TEXT NOT NULL,
+            content_bytes INTEGER NOT NULL,
+            duration_ms INTEGER NOT NULL,
+            UNIQUE(run_id, source_key),
+            UNIQUE(run_id, ordinal),
+            FOREIGN KEY(run_id) REFERENCES research_runs(run_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_sources_run_ordinal
+        ON research_sources(run_id, ordinal);
+
+        CREATE TABLE IF NOT EXISTS research_claims (
+            claim_record_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            claim_key TEXT NOT NULL,
+            statement TEXT NOT NULL,
+            claim_type TEXT NOT NULL,
+            rationale TEXT,
+            created_at TEXT NOT NULL,
+            UNIQUE(run_id, claim_key),
+            FOREIGN KEY(run_id) REFERENCES research_runs(run_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_claims_run
+        ON research_claims(run_id);
+
+        CREATE TABLE IF NOT EXISTS research_citations (
+            claim_record_id TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            excerpt TEXT NOT NULL,
+            excerpt_sha256 TEXT NOT NULL,
+            PRIMARY KEY(claim_record_id, source_id, excerpt_sha256),
+            FOREIGN KEY(claim_record_id)
+                REFERENCES research_claims(claim_record_id),
+            FOREIGN KEY(source_id) REFERENCES research_sources(source_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_citations_source
+        ON research_citations(source_id);
+        """,
+    ),
+    (
+        "0005_acceptance_truth",
+        """
+        CREATE TABLE IF NOT EXISTS acceptance_runs (
+            evaluation_id TEXT PRIMARY KEY,
+            task_id TEXT NOT NULL,
+            objective TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            request_sha256 TEXT NOT NULL,
+            status TEXT NOT NULL,
+            outcome TEXT,
+            summary TEXT,
+            error TEXT,
+            started_at TEXT NOT NULL,
+            completed_at TEXT,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_acceptance_runs_task_started
+        ON acceptance_runs(task_id, started_at);
+
+        CREATE TABLE IF NOT EXISTS acceptance_evidence (
+            evidence_record_id TEXT PRIMARY KEY,
+            evaluation_id TEXT NOT NULL,
+            evidence_key TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            disposition TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            reference TEXT NOT NULL,
+            observed_at TEXT,
+            UNIQUE(evaluation_id, evidence_key),
+            FOREIGN KEY(evaluation_id) REFERENCES acceptance_runs(evaluation_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_acceptance_evidence_evaluation
+        ON acceptance_evidence(evaluation_id);
+
+        CREATE TABLE IF NOT EXISTS acceptance_claims (
+            claim_record_id TEXT PRIMARY KEY,
+            evaluation_id TEXT NOT NULL,
+            claim_key TEXT NOT NULL,
+            statement TEXT NOT NULL,
+            truth_label TEXT NOT NULL,
+            rationale TEXT,
+            evidence_keys_json TEXT NOT NULL,
+            UNIQUE(evaluation_id, claim_key),
+            FOREIGN KEY(evaluation_id) REFERENCES acceptance_runs(evaluation_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_acceptance_claims_evaluation
+        ON acceptance_claims(evaluation_id);
+
+        CREATE TABLE IF NOT EXISTS acceptance_criteria (
+            criterion_record_id TEXT PRIMARY KEY,
+            evaluation_id TEXT NOT NULL,
+            criterion_key TEXT NOT NULL,
+            description TEXT NOT NULL,
+            required INTEGER NOT NULL,
+            verdict TEXT NOT NULL,
+            unresolved_action TEXT NOT NULL,
+            evidence_keys_json TEXT NOT NULL,
+            UNIQUE(evaluation_id, criterion_key),
+            FOREIGN KEY(evaluation_id) REFERENCES acceptance_runs(evaluation_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_acceptance_criteria_evaluation
+        ON acceptance_criteria(evaluation_id);
+
+        CREATE TABLE IF NOT EXISTS acceptance_constraints (
+            constraint_record_id TEXT PRIMARY KEY,
+            evaluation_id TEXT NOT NULL,
+            constraint_key TEXT NOT NULL,
+            description TEXT NOT NULL,
+            violated INTEGER NOT NULL,
+            evidence_keys_json TEXT NOT NULL,
+            UNIQUE(evaluation_id, constraint_key),
+            FOREIGN KEY(evaluation_id) REFERENCES acceptance_runs(evaluation_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_acceptance_constraints_evaluation
+        ON acceptance_constraints(evaluation_id);
+        """,
+    ),
 )
 
 

@@ -40,16 +40,22 @@ class ExecutableRule:
     executable: Path
     allowed_argument_prefixes: tuple[tuple[str, ...], ...] = ()
     allow_any_arguments: bool = False
+    resolved_executable: Path = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         alias = self.alias.strip()
         if not alias or any(separator in alias for separator in ("/", "\\")):
             raise ValueError("executable alias must be a non-empty basename")
-        executable = Path(self.executable).expanduser().resolve(strict=True)
-        if not executable.is_file():
-            raise FileNotFoundError(f"allowed executable is not a file: {executable}")
+        requested = Path(self.executable).expanduser()
+        executable = Path(os.path.abspath(requested))
+        resolved_executable = executable.resolve(strict=True)
+        if not resolved_executable.is_file():
+            raise FileNotFoundError(
+                f"allowed executable is not a file: {resolved_executable}"
+            )
         object.__setattr__(self, "alias", alias)
         object.__setattr__(self, "executable", executable)
+        object.__setattr__(self, "resolved_executable", resolved_executable)
         if self.allow_any_arguments and self.allowed_argument_prefixes:
             raise ValueError("allow_any_arguments cannot be combined with argument prefixes")
         for prefix in self.allowed_argument_prefixes:
@@ -57,6 +63,26 @@ class ExecutableRule:
                 raise ValueError("allowed argument prefixes must not be empty")
             if not all(isinstance(value, str) and "\x00" not in value for value in prefix):
                 raise ValueError("argument prefixes must contain valid strings")
+
+    def verify_target(self) -> None:
+        """Reject an executable link whose target changed after policy creation."""
+
+        try:
+            current = self.executable.resolve(strict=True)
+        except FileNotFoundError:
+            # Preserve the existing structured spawn-error behavior for an
+            # executable that disappeared after policy creation.
+            return
+        except OSError as exc:
+            raise CommandDenied(
+                f"allowlisted executable is no longer available: {self.alias}"
+            ) from exc
+        if os.path.normcase(str(current)) != os.path.normcase(
+            str(self.resolved_executable)
+        ):
+            raise CommandDenied(
+                f"allowlisted executable target changed: {self.alias}"
+            )
 
     def permits(self, arguments: tuple[str, ...]) -> bool:
         if self.allow_any_arguments:
@@ -132,6 +158,7 @@ class CommandPolicy:
                 if (
                     rule.alias.casefold() in self.SHELL_NAMES
                     or rule.executable.name.casefold() in self.SHELL_NAMES
+                    or rule.resolved_executable.name.casefold() in self.SHELL_NAMES
                 ):
                     raise ValueError(
                         f"shell executable requires explicit opt-in: {rule.executable.name}"
@@ -159,17 +186,25 @@ class CommandPolicy:
 
         if Path(token).is_absolute() or any(separator in token for separator in ("/", "\\")):
             try:
-                requested = Path(token).expanduser().resolve(strict=True)
+                requested_launch = Path(os.path.abspath(Path(token).expanduser()))
+                requested_resolved = requested_launch.resolve(strict=True)
             except OSError as exc:
                 raise CommandDenied(f"executable cannot be resolved: {token}") from exc
-            requested_key = os.path.normcase(str(requested))
+            requested_launch_key = os.path.normcase(str(requested_launch))
+            requested_resolved_key = os.path.normcase(str(requested_resolved))
             for rule in self.rules:
-                if os.path.normcase(str(rule.executable)) == requested_key:
+                rule.verify_target()
+                if (
+                    os.path.normcase(str(rule.executable)) == requested_launch_key
+                    or os.path.normcase(str(rule.resolved_executable))
+                    == requested_resolved_key
+                ):
                     return rule
         else:
             alias = token.casefold()
             for rule in self.rules:
                 if rule.alias.casefold() == alias:
+                    rule.verify_target()
                     return rule
         raise CommandDenied(f"executable is not allowlisted: {token}")
 
@@ -433,7 +468,8 @@ class CommandRunner:
         return {
             "argv": display_argv,
             "executable_alias": rule.alias,
-            "resolved_executable": str(rule.executable),
+            "launch_executable": str(rule.executable),
+            "resolved_executable": str(rule.resolved_executable),
             "cwd": relative_cwd,
             "timeout_seconds": float(request.timeout_seconds),
             "max_output_bytes": output_limit,
@@ -503,6 +539,9 @@ class CommandRunner:
         except OSError as exc:
             portable_error = repr(exc).replace(
                 str(rule.executable),
+                f"<executable:{rule.alias}>",
+            ).replace(
+                str(rule.resolved_executable),
                 f"<executable:{rule.alias}>",
             ).replace(
                 str(cwd),

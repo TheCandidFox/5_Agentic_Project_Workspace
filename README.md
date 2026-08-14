@@ -232,3 +232,63 @@ being blindly retried.
 
 See `docs/implementation/BOUNDED_AUTONOMY.md` for the state machine, resume
 rules, cost handling, tests, and deliberate limitations.
+
+## Phase 6 Tranche A: authoritative documentation research
+
+Phase 6 begins with `research_provenance.py`, an offline-first research action
+that preserves source URLs, titles, primary-source status, applicable
+version/date, retrieval timestamps, bounded captured text, SHA-256 evidence,
+claim-to-source excerpts, and usage telemetry. Migration
+`0004_research_provenance` adds durable research runs, sources, claims, and
+citations without changing prior tables.
+
+Automated tests use only deterministic fixtures. Completed runs replay from
+SQLite without retrieval, and partially captured offline runs resume without
+refetching the stored source. The included HTTP adapter is disabled by default,
+requires an exact hostname allowlist and public HTTPS target, refuses redirects
+and ambient proxies, and is not invoked by any bootstrap entry point.
+
+See `docs/implementation/AUTHORITATIVE_RESEARCH.md` and
+`docs/planning/PHASE_6_IMPLEMENTATION_AND_ACCEPTANCE_CONTRACT.md` for the
+governed request, evidence policy, live-network boundary, and acceptance tests.
+
+## Phase 6 Tranche B: acceptance and truth governance
+
+`acceptance_truth.py` adds evidence references, claim truth labels, required
+and optional criterion verdicts, hard-constraint findings, and deterministic
+acceptance aggregation. It enforces `VERIFIED`, `SUPPORTED`, `INFERRED`,
+`DISPUTED`, and `UNKNOWN` evidence invariants and returns only `PASS`, `REPAIR`,
+`BLOCK`, `HUMAN_DECISION`, or `DEFER`.
+
+Migration `0005_acceptance_truth` persists idempotent evaluations and their
+evidence, claims, criteria, constraints, and outcomes. The fixed calibration
+runs known complete, incomplete, uncertain, constraint-violating, and genuinely
+disputed cases twice; both rounds must match without a model judge or provider
+call.
+
+See `docs/implementation/ACCEPTANCE_TRUTH.md` for aggregation precedence,
+durability, calibration, and the boundary between structural evidence
+governance and semantic truth.
+
+## Phase 6 Tranche C: final bootstrap acceptance
+
+Run the complete Phase 6 gate with:
+
+```powershell
+python run_bootstrap_phase6.py --status-only
+python run_bootstrap_phase6.py
+```
+
+Status-only mode checks migrations, SQLite/Git readiness, default network
+denial, and the ten-gate evidence manifest without pytest, retrieval, providers,
+or mutation. Full mode runs the complete guarded regression suite, deterministic
+research capture/replay, research-to-acceptance linkage, stable five-case truth
+calibration, and exactly ten final bootstrap gates.
+
+Neither mode constructs a provider client or performs a network request. A
+passing result completes the execution/research/acceptance bootstrap; Markdown
+project-contract parsing and general backlog orchestration remain the next
+phase.
+
+See `docs/implementation/PHASE_6_FINAL_BOOTSTRAP.md`,
+`PHASE_6_INSTALLATION.md`, and `PHASE_6_CHANGELOG.md`.
