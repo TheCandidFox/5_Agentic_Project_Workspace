@@ -475,6 +475,49 @@ SCHEMA_MIGRATIONS: tuple[tuple[str, str], ...] = (
         ON project_artifacts(run_id, task_key);
         """,
     ),
+    (
+        "0007_governed_provider_calls",
+        """
+        CREATE TABLE IF NOT EXISTS provider_calls (
+            provider_call_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            task_key TEXT NOT NULL,
+            attempt_number INTEGER NOT NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            request_sha256 TEXT NOT NULL,
+            execution_mode TEXT NOT NULL,
+            provider TEXT NOT NULL,
+            model TEXT NOT NULL,
+            prompt_template_version TEXT NOT NULL,
+            prompt_sha256 TEXT NOT NULL,
+            response_schema TEXT NOT NULL,
+            max_output_tokens INTEGER NOT NULL,
+            quoted_cost_usd REAL NOT NULL,
+            status TEXT NOT NULL,
+            provider_request_id TEXT,
+            response_sha256 TEXT,
+            response_json TEXT,
+            input_tokens INTEGER,
+            output_tokens INTEGER,
+            estimated_cost_usd REAL,
+            latency_ms INTEGER,
+            stop_reason TEXT,
+            error TEXT,
+            started_at TEXT NOT NULL,
+            completed_at TEXT,
+            updated_at TEXT NOT NULL,
+            UNIQUE(run_id, task_key, attempt_number),
+            FOREIGN KEY(run_id, task_key)
+                REFERENCES backlog_tasks(run_id, task_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_provider_calls_run_task
+        ON provider_calls(run_id, task_key, attempt_number);
+
+        CREATE INDEX IF NOT EXISTS idx_provider_calls_status_started
+        ON provider_calls(status, started_at);
+        """,
+    ),
 )
 
 

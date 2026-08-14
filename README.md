@@ -18,7 +18,9 @@ rollback; Phase 5 adds the bounded repair state machine. Live repair-provider
 integration remains deliberately disabled pending explicit provider and budget
 approval. Phase 6 adds offline research provenance and acceptance/truth
 governance. Phase 7 adds the first durable Markdown-contract runner using a
-deterministic zero-cost checklist profile.
+deterministic zero-cost checklist profile. Phase 8 adds an opt-in, fingerprint-
+approved provider profile with strict response schemas, durable call
+provenance, dual budget gates, and an offline simulated canary.
 
 ## What is preserved
 
@@ -328,3 +330,38 @@ Later phases can add reviewed planner/executor adapters behind the same durable
 and policy-controlled interfaces. See
 `docs/implementation/PHASE_7_ORCHESTRATION.md` and
 `docs/planning/PHASE_7_IMPLEMENTATION_AND_ACCEPTANCE_CONTRACT.md`.
+
+## Phase 8: governed provider orchestration
+
+Phase 8 adds:
+
+- `provider_gateway.py` — explicit execution modes, route allowlists,
+  conservative pre-call quotes, daily/monthly/project budget reservations,
+  strict JSON parsing, usage/cost validation, and durable call claims;
+- `governed_live_profile.py` — a fixed two-task composer/reviewer DAG that can
+  write only one declared Markdown deliverable;
+- migration `0007_governed_provider_calls` for prompt/response hashes, validated
+  payloads, request identity, usage, cost, latency, and safe failure evidence;
+- `run_phase8.py` — status, offline simulation, live preparation, and
+  fingerprint-approved live modes;
+- separate mock and proposed live-canary Markdown contracts.
+
+Run the complete offline Phase 8 verification path with:
+
+```powershell
+python run_phase8.py --status-only
+python run_phase8.py --mock-canary
+python run_phase8.py --prepare-live
+```
+
+None of these commands constructs a provider SDK client or makes a network
+call. Mock mode uses an explicit in-memory fixture but exercises the real
+gateway, schema, durable orchestration, acceptance, and replay path. Live mode
+requires both `--live` and the exact fingerprint printed by `--prepare-live`;
+the installer never supplies either.
+
+Phase 8 is intentionally one-shot: a failed semantic review returns `REPAIR`
+without silently overwriting or redispatching the artifact. Repair and
+multi-iteration quality hardening are Phase 9 feedback targets. See
+`docs/implementation/PHASE_8_GOVERNED_PROVIDERS.md` and
+`docs/planning/PHASE_8_IMPLEMENTATION_AND_ACCEPTANCE_CONTRACT.md`.

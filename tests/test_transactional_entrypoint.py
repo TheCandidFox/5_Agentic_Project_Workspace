@@ -55,6 +55,7 @@ def test_transactional_status_applies_additive_schema_without_tests(tmp_path):
         "0004_research_provenance",
         "0005_acceptance_truth",
         "0006_project_orchestration",
+        "0007_governed_provider_calls",
     )
     assert report.phase2 is None
     assert report.git_status.branch == "main"

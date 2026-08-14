@@ -128,6 +128,15 @@ _POLICY_KEYS = {
     "max no progress": "max_no_progress",
     "max runtime seconds": "max_runtime_seconds",
 }
+_SUPPORTED_PROFILES = frozenset({"offline-checklist-v1", "governed-live-v1"})
+_LIVE_REQUIRED_CRITERIA = frozenset({"deliverable-exists", "required-sections"})
+_LIVE_REQUIRED_CONSTRAINTS = frozenset(
+    {
+        "workspace-confined",
+        "declared-artifact-only",
+        "no-external-side-effects",
+    }
+)
 
 
 def _safe_text(name: str, value: str, *, maximum: int) -> str:
@@ -280,8 +289,8 @@ def _execution_policy(lines: list[str]) -> ProjectExecutionPolicy:
         values[mapped] = value.strip()
 
     profile = _strip_code_ticks(values.get("profile", "offline-checklist-v1"))
-    if profile != "offline-checklist-v1":
-        raise ProjectContractError(f"unsupported Phase 7 execution profile: {profile}")
+    if profile not in _SUPPORTED_PROFILES:
+        raise ProjectContractError(f"unsupported execution profile: {profile}")
     authority_text = _strip_code_ticks(
         values.get("authority", AuthorityLevel.WORKSPACE_WRITE.value)
     ).casefold()
@@ -423,6 +432,50 @@ def parse_project_contract(
         "out of scope", sections.get("out of scope", []), required=False
     )
     policy = _execution_policy(sections.get("execution policy", []))
+
+    if policy.profile == "governed-live-v1":
+        if policy.authority_ceiling != AuthorityLevel.LIVE_NETWORK:
+            raise ProjectContractError(
+                "governed-live-v1 requires the live-network authority ceiling"
+            )
+        if not 0 < policy.budget_usd <= 5:
+            raise ProjectContractError(
+                "governed-live-v1 requires Budget USD greater than 0 and at most 5"
+            )
+        if len(deliverables) != 1:
+            raise ProjectContractError(
+                "governed-live-v1 requires exactly one Markdown deliverable"
+            )
+        if policy.max_tasks > 4:
+            raise ProjectContractError("governed-live-v1 permits at most 4 tasks")
+        if policy.max_iterations > 8:
+            raise ProjectContractError(
+                "governed-live-v1 permits at most 8 scheduler iterations"
+            )
+        if policy.max_no_progress > 2:
+            raise ProjectContractError(
+                "governed-live-v1 permits at most 2 no-progress results"
+            )
+        if policy.max_runtime_seconds > 600:
+            raise ProjectContractError(
+                "governed-live-v1 permits at most 600 runtime seconds"
+            )
+        criterion_keys = {item.criterion_key for item in criteria}
+        missing_criteria = sorted(_LIVE_REQUIRED_CRITERIA.difference(criterion_keys))
+        if missing_criteria:
+            raise ProjectContractError(
+                "governed-live-v1 is missing required criteria: "
+                + ", ".join(missing_criteria)
+            )
+        constraint_keys = {item.constraint_key for item in constraints}
+        missing_constraints = sorted(
+            _LIVE_REQUIRED_CONSTRAINTS.difference(constraint_keys)
+        )
+        if missing_constraints:
+            raise ProjectContractError(
+                "governed-live-v1 is missing required constraints: "
+                + ", ".join(missing_constraints)
+            )
 
     identity_payload: dict[str, Any] = {
         "schema_version": 1,

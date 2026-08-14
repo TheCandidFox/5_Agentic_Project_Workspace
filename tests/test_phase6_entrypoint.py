@@ -90,6 +90,7 @@ def test_phase6_status_applies_schema_without_smoke_or_network(tmp_path):
         "0004_research_provenance",
         "0005_acceptance_truth",
         "0006_project_orchestration",
+        "0007_governed_provider_calls",
     )
     ledger = Ledger(root / "ledger.db", project_root=root)
     with ledger.connect() as con:

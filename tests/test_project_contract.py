@@ -136,3 +136,29 @@ def test_load_contract_is_workspace_confined_and_utf8(tmp_path: Path):
     invalid.write_bytes(b"\xff\xfe")
     with pytest.raises(ProjectContractError, match="UTF-8"):
         load_project_contract(guard, "project/invalid.md")
+
+
+def test_governed_live_profile_requires_positive_budget_authority_and_controls():
+    live = (
+        Path(__file__).resolve().parents[1]
+        / "project"
+        / "phase8_live_canary_goal.md"
+    ).read_text(encoding="utf-8")
+    contract = parse_project_contract(live, source_path="project/live.md")
+    assert contract.policy.profile == "governed-live-v1"
+    assert contract.policy.authority_ceiling == AuthorityLevel.LIVE_NETWORK
+    assert contract.policy.budget_usd == 0.5
+
+    with pytest.raises(ProjectContractError, match="live-network"):
+        parse_project_contract(
+            live.replace("Authority: `live-network`", "Authority: `workspace-write`")
+        )
+    with pytest.raises(ProjectContractError, match="greater than 0"):
+        parse_project_contract(live.replace("Budget USD: `0.50`", "Budget USD: `0`"))
+    with pytest.raises(ProjectContractError, match="missing required constraints"):
+        parse_project_contract(
+            live.replace(
+                "- `declared-artifact-only`: Write only the declared Markdown deliverable.\n",
+                "",
+            )
+        )

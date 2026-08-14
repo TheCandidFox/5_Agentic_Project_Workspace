@@ -4,9 +4,6 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from anthropic import Anthropic
-from openai import OpenAI
-
 from telemetry import Usage
 
 
@@ -22,9 +19,13 @@ class ProviderResponse:
 
 
 class ProviderAdapter:
-    def __init__(self, openai_client: OpenAI | None = None, anthropic_client: Anthropic | None = None):
-        self.openai = openai_client or OpenAI()
-        self.anthropic = anthropic_client or Anthropic()
+    def __init__(self, openai_client: Any | None = None, anthropic_client: Any | None = None):
+        # Clients are deliberately lazy. Offline status, preparation, and test
+        # paths can import this adapter without reading keys or constructing an
+        # SDK client.
+        self.openai = openai_client
+        self.anthropic = anthropic_client
+        self.offline_fixture = False
 
     def call(
         self,
@@ -37,7 +38,12 @@ class ProviderAdapter:
         started = time.perf_counter()
 
         if provider == "openai":
-            r = self.openai.responses.create(
+            if self.openai is None:
+                from openai import OpenAI
+
+                self.openai = OpenAI()
+            client = self.openai
+            r = client.responses.create(
                 model=model,
                 input=prompt,
                 max_output_tokens=max_output_tokens,
@@ -56,7 +62,12 @@ class ProviderAdapter:
             )
 
         if provider == "anthropic":
-            r = self.anthropic.messages.create(
+            if self.anthropic is None:
+                from anthropic import Anthropic
+
+                self.anthropic = Anthropic()
+            client = self.anthropic
+            r = client.messages.create(
                 model=model,
                 max_tokens=max_output_tokens,
                 messages=[{"role": "user", "content": prompt}],
