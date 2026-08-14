@@ -1,0 +1,490 @@
+{
+  "legacy_track": {
+    "min_words": 1000,
+    "min_headings": 4,
+    "min_urls": 3,
+    "require_sentinel": false,
+    "required_term_groups": []
+  },
+  "repaired_track": {
+    "min_words": 1300,
+    "min_headings": 6,
+    "min_urls": 3,
+    "require_sentinel": true,
+    "required_term_groups": [
+      [
+        "executive findings",
+        "executive summary"
+      ],
+      [
+        "current facts",
+        "resolved facts",
+        "comparison"
+      ],
+      [
+        "value architecture"
+      ],
+      [
+        "quality-max",
+        "quality max"
+      ],
+      [
+        "risk",
+        "complexity",
+        "lock-in"
+      ],
+      [
+        "empirical",
+        "uncertaint",
+        "benchmark"
+      ],
+      [
+        "recommend",
+        "decision"
+      ]
+    ]
+  },
+  "modules": {
+    "VALUE_ARCHITECTURE.md": {
+      "writer": "gpt",
+      "min_words": 1400,
+      "min_headings": 6,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "executive recommendation"
+        ],
+        [
+          "core architecture",
+          "topology"
+        ],
+        [
+          "provider",
+          "model"
+        ],
+        [
+          "routing",
+          "escalation"
+        ],
+        [
+          "cost",
+          "budget"
+        ],
+        [
+          "long-running",
+          "checkpoint",
+          "resume"
+        ],
+        [
+          "deployment",
+          "cloud"
+        ],
+        [
+          "what not to build",
+          "defer",
+          "not at launch"
+        ]
+      ]
+    },
+    "QUALITY_MAX_ARCHITECTURE.md": {
+      "writer": "claude",
+      "min_words": 1100,
+      "min_headings": 5,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "quality-max",
+          "quality max"
+        ],
+        [
+          "provider",
+          "model"
+        ],
+        [
+          "review",
+          "independent"
+        ],
+        [
+          "routing",
+          "escalation"
+        ],
+        [
+          "cost",
+          "trade-off",
+          "tradeoff"
+        ],
+        [
+          "difference",
+          "value architecture"
+        ]
+      ]
+    },
+    "MODEL_ROUTING_MATRIX.md": {
+      "writer": "gpt",
+      "min_words": 1100,
+      "min_headings": 5,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "routing matrix"
+        ],
+        [
+          "coding"
+        ],
+        [
+          "automation",
+          "integration"
+        ],
+        [
+          "research"
+        ],
+        [
+          "data",
+          "spreadsheet"
+        ],
+        [
+          "document"
+        ],
+        [
+          "image",
+          "vision"
+        ],
+        [
+          "escalation"
+        ],
+        [
+          "disagreement",
+          "review"
+        ]
+      ]
+    },
+    "COST_MODEL.md": {
+      "writer": "claude",
+      "min_words": 1200,
+      "min_headings": 5,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "$150",
+          "150"
+        ],
+        [
+          "budget"
+        ],
+        [
+          "token",
+          "tool"
+        ],
+        [
+          "guardrail",
+          "cap"
+        ],
+        [
+          "scenario",
+          "workload"
+        ],
+        [
+          "failure mode",
+          "cost driver"
+        ],
+        [
+          "quality-max",
+          "quality max"
+        ]
+      ]
+    },
+    "CONTEXT_AND_MEMORY.md": {
+      "writer": "gpt",
+      "min_words": 1200,
+      "min_headings": 5,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "graphify"
+        ],
+        [
+          "rag",
+          "retrieval"
+        ],
+        [
+          "vector",
+          "embedding"
+        ],
+        [
+          "graph",
+          "graphrag"
+        ],
+        [
+          "mcp"
+        ],
+        [
+          "cache",
+          "caching"
+        ],
+        [
+          "code"
+        ],
+        [
+          "spreadsheet",
+          "document"
+        ],
+        [
+          "verification",
+          "enforcement"
+        ]
+      ]
+    },
+    "LONG_RUNNING_WORK.md": {
+      "writer": "claude",
+      "min_words": 1300,
+      "min_headings": 6,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "checkpoint"
+        ],
+        [
+          "resume"
+        ],
+        [
+          "task queue",
+          "dependency"
+        ],
+        [
+          "retry",
+          "backoff"
+        ],
+        [
+          "rate limit",
+          "usage limit"
+        ],
+        [
+          "idempot"
+        ],
+        [
+          "event",
+          "webhook"
+        ],
+        [
+          "runaway",
+          "loop",
+          "stop condition"
+        ],
+        [
+          "human",
+          "approval"
+        ]
+      ]
+    },
+    "DEPLOYMENT.md": {
+      "writer": "gpt",
+      "min_words": 1100,
+      "min_headings": 5,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "windows"
+        ],
+        [
+          "macos",
+          "mac"
+        ],
+        [
+          "cloud"
+        ],
+        [
+          "github"
+        ],
+        [
+          "s3",
+          "object storage"
+        ],
+        [
+          "database"
+        ],
+        [
+          "pwa",
+          "mobile",
+          "dashboard"
+        ],
+        [
+          "local",
+          "migration"
+        ]
+      ]
+    },
+    "SECURITY_ROADMAP.md": {
+      "writer": "claude",
+      "min_words": 1100,
+      "min_headings": 5,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "api key",
+          "secret"
+        ],
+        [
+          "tenant",
+          "business separation"
+        ],
+        [
+          "permission",
+          "least privilege"
+        ],
+        [
+          "audit",
+          "logging"
+        ],
+        [
+          "sensitive"
+        ],
+        [
+          "retention",
+          "privacy"
+        ],
+        [
+          "encryption"
+        ],
+        [
+          "stage",
+          "roadmap"
+        ]
+      ]
+    },
+    "IMPLEMENTATION_ROADMAP.md": {
+      "writer": "claude",
+      "min_words": 1600,
+      "min_headings": 7,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "immediate next build",
+          "next build"
+        ],
+        [
+          "v0.2",
+          "v0.3",
+          "v1.0"
+        ],
+        [
+          "step-by-step",
+          "step by step",
+          "steps"
+        ],
+        [
+          "acceptance criteria",
+          "test"
+        ],
+        [
+          "file",
+          "component"
+        ],
+        [
+          "rollback",
+          "recovery"
+        ],
+        [
+          "cloud"
+        ],
+        [
+          "router"
+        ],
+        [
+          "retrieval"
+        ],
+        [
+          "security"
+        ],
+        [
+          "dashboard",
+          "pwa"
+        ]
+      ]
+    },
+    "EMPIRICAL_EVAL_PLAN.md": {
+      "writer": "gpt",
+      "min_words": 1100,
+      "min_headings": 5,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "benchmark",
+          "eval"
+        ],
+        [
+          "coding"
+        ],
+        [
+          "automation",
+          "integration"
+        ],
+        [
+          "research"
+        ],
+        [
+          "data",
+          "spreadsheet"
+        ],
+        [
+          "quality"
+        ],
+        [
+          "cost"
+        ],
+        [
+          "latency"
+        ],
+        [
+          "acceptance",
+          "score"
+        ]
+      ]
+    },
+    "FINAL_ARCHITECTURE.md": {
+      "writer": "gpt",
+      "min_words": 1300,
+      "min_headings": 6,
+      "require_sentinel": true,
+      "required_term_groups": [
+        [
+          "executive recommendation"
+        ],
+        [
+          "value architecture"
+        ],
+        [
+          "quality-max",
+          "quality max"
+        ],
+        [
+          "routing"
+        ],
+        [
+          "context",
+          "retrieval"
+        ],
+        [
+          "long-running",
+          "resume"
+        ],
+        [
+          "deployment"
+        ],
+        [
+          "security"
+        ],
+        [
+          "implementation roadmap"
+        ],
+        [
+          "evaluation",
+          "eval"
+        ],
+        [
+          "deliverable map",
+          "companion files"
+        ]
+      ]
+    }
+  }
+}

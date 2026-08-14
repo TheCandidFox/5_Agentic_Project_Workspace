@@ -1,0 +1,23 @@
+# Secrets and local environments
+.env
+secrets.env
+.venv/
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest_tmp/
+
+# Editor and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Mutable runtime state and generated artifacts
+ledger.db
+ledger.db-shm
+ledger.db-wal
+outputs/
+logs/

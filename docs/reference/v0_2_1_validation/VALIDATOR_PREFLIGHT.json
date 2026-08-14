@@ -1,0 +1,883 @@
+{
+  "time": "2026-08-09T05:21:32.089808+00:00",
+  "suite_version": "v0.2.8-controlled-calibration-1",
+  "fingerprint": "f427b3ce3589b521c4ffc1589d89f384abf15e5c60ea775608817c365614e283",
+  "pass": true,
+  "deterministic": [
+    {
+      "name": "healthy_01",
+      "expected_pass": true,
+      "actual_pass": true,
+      "ok": true,
+      "result": {
+        "pass": true,
+        "errors": [],
+        "warnings": [],
+        "metrics": {
+          "words": 2329,
+          "headings": 19,
+          "urls": 39
+        }
+      }
+    },
+    {
+      "name": "healthy_02",
+      "expected_pass": true,
+      "actual_pass": true,
+      "ok": true,
+      "result": {
+        "pass": true,
+        "errors": [],
+        "warnings": [],
+        "metrics": {
+          "words": 2180,
+          "headings": 10,
+          "urls": 52
+        }
+      }
+    },
+    {
+      "name": "healthy_07",
+      "expected_pass": true,
+      "actual_pass": true,
+      "ok": true,
+      "result": {
+        "pass": true,
+        "errors": [],
+        "warnings": [],
+        "metrics": {
+          "words": 2139,
+          "headings": 16,
+          "urls": 49
+        }
+      }
+    },
+    {
+      "name": "broken_03",
+      "expected_pass": false,
+      "actual_pass": false,
+      "ok": true,
+      "result": {
+        "pass": false,
+        "errors": [
+          "too short: 132 words < required 1000",
+          "too few headings: 1 < required 4",
+          "artifact appears to contain mostly links/metadata rather than substantive content"
+        ],
+        "warnings": [],
+        "metrics": {
+          "words": 132,
+          "headings": 1,
+          "urls": 49
+        }
+      }
+    },
+    {
+      "name": "broken_04",
+      "expected_pass": false,
+      "actual_pass": false,
+      "ok": true,
+      "result": {
+        "pass": false,
+        "errors": [
+          "too short: 427 words < required 1000",
+          "too few headings: 2 < required 4",
+          "meta-output/file-export pattern detected: \\bhas been produced and exported\\b",
+          "artifact appears to contain mostly links/metadata rather than substantive content"
+        ],
+        "warnings": [],
+        "metrics": {
+          "words": 427,
+          "headings": 2,
+          "urls": 50
+        }
+      }
+    },
+    {
+      "name": "broken_05",
+      "expected_pass": false,
+      "actual_pass": false,
+      "ok": true,
+      "result": {
+        "pass": false,
+        "errors": [
+          "report body ending looks syntactically incomplete",
+          "final report-body bullet is incomplete",
+          "process/meta preamble detected: ^\\s*I(?:'|\u2019)ll\\s+(?:verify|check|research|look up|search|investigate)\\b"
+        ],
+        "warnings": [],
+        "metrics": {
+          "words": 2370,
+          "headings": 14,
+          "urls": 48
+        }
+      }
+    },
+    {
+      "name": "broken_06",
+      "expected_pass": false,
+      "actual_pass": false,
+      "ok": true,
+      "result": {
+        "pass": false,
+        "errors": [
+          "too short: 100 words < required 1000",
+          "too few headings: 1 < required 4",
+          "artifact appears to contain mostly links/metadata rather than substantive content"
+        ],
+        "warnings": [],
+        "metrics": {
+          "words": 100,
+          "headings": 1,
+          "urls": 48
+        }
+      }
+    },
+    {
+      "name": "broken_08",
+      "expected_pass": false,
+      "actual_pass": false,
+      "ok": true,
+      "result": {
+        "pass": false,
+        "errors": [
+          "process/meta preamble detected: ^\\s*I(?:'|\u2019)ll\\s+(?:verify|check|research|look up|search|investigate)\\b"
+        ],
+        "warnings": [],
+        "metrics": {
+          "words": 2300,
+          "headings": 23,
+          "urls": 43
+        }
+      }
+    },
+    {
+      "name": "broken_09",
+      "expected_pass": false,
+      "actual_pass": false,
+      "ok": true,
+      "result": {
+        "pass": false,
+        "errors": [
+          "too short: 128 words < required 1000",
+          "too few headings: 1 < required 4",
+          "meta-output/file-export pattern detected: \\bI(?:'|\u2019)ll do targeted verification\\b",
+          "meta-output/file-export pattern detected: \\bnow let me (?:build|write|produce)\\b",
+          "artifact appears to contain mostly links/metadata rather than substantive content"
+        ],
+        "warnings": [],
+        "metrics": {
+          "words": 128,
+          "headings": 1,
+          "urls": 38
+        }
+      }
+    },
+    {
+      "name": "synthetic_valid",
+      "expected_pass": true,
+      "actual_pass": true,
+      "ok": true,
+      "result": {
+        "pass": true,
+        "errors": [],
+        "warnings": [],
+        "metrics": {
+          "words": 369,
+          "headings": 2,
+          "urls": 1
+        }
+      }
+    },
+    {
+      "name": "synthetic_missing_sentinel",
+      "expected_pass": false,
+      "actual_pass": false,
+      "ok": true,
+      "result": {
+        "pass": false,
+        "errors": [
+          "missing final ARTIFACT_COMPLETE sentinel"
+        ],
+        "warnings": [],
+        "metrics": {
+          "words": 366,
+          "headings": 2,
+          "urls": 1
+        }
+      }
+    },
+    {
+      "name": "synthetic_meta_export",
+      "expected_pass": false,
+      "actual_pass": false,
+      "ok": true,
+      "result": {
+        "pass": false,
+        "errors": [
+          "meta-output/file-export pattern detected: \\bhas been produced and exported\\b"
+        ],
+        "warnings": [],
+        "metrics": {
+          "words": 378,
+          "headings": 2,
+          "urls": 1
+        }
+      }
+    }
+  ],
+  "semantic": [
+    {
+      "name": "scope_allows_defer",
+      "expected_pass": true,
+      "pass_votes": 3,
+      "fail_votes": 0,
+      "majority_pass": true,
+      "stable": true,
+      "ok": true,
+      "votes": [
+        {
+          "pass": true,
+          "severity": "none",
+          "missing_requirements": [],
+          "material_errors": [],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": []
+        },
+        {
+          "pass": true,
+          "severity": "none",
+          "missing_requirements": [],
+          "material_errors": [],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": []
+        },
+        {
+          "pass": true,
+          "severity": "none",
+          "missing_requirements": [],
+          "material_errors": [],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": []
+        }
+      ],
+      "resolved_pass": true,
+      "adjudication": null
+    },
+    {
+      "name": "nonblocking_estimates_allowed",
+      "expected_pass": true,
+      "pass_votes": 3,
+      "fail_votes": 0,
+      "majority_pass": true,
+      "stable": true,
+      "ok": true,
+      "votes": [
+        {
+          "pass": true,
+          "severity": "low",
+          "missing_requirements": [],
+          "material_errors": [
+            "The decision does not yet specify workload assumptions, availability targets, or recovery objectives; these should be validated during implementation planning but do not block adoption of the initial architecture shape."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Before provisioning, document expected workload, storage durability/retention needs, recovery objectives, and the criteria for scaling beyond the single control-plane VM."
+          ]
+        },
+        {
+          "pass": true,
+          "severity": "low",
+          "missing_requirements": [],
+          "material_errors": [
+            "The worker cost range is intentionally non-binding and requires measurement before worker provisioning; no blocking unsupported budget decision is made."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Before production approval, document and pass acceptance criteria for secret bootstrap, rotation, backup restoration, and the restore drill."
+          ]
+        },
+        {
+          "pass": true,
+          "severity": "low",
+          "missing_requirements": [],
+          "material_errors": [
+            "The artifact does not yet specify object-storage access controls, retention, or backup/restore source details; these are implementation-level items and do not block the initial architecture decision."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Before production approval, define object-storage access policy, encryption, retention/versioning, and the restore-drill procedure alongside the required secret bootstrap and rotation procedure."
+          ]
+        }
+      ],
+      "resolved_pass": true,
+      "adjudication": null
+    },
+    {
+      "name": "unsupported_adoption_must_fail",
+      "expected_pass": false,
+      "pass_votes": 0,
+      "fail_votes": 3,
+      "majority_pass": false,
+      "stable": true,
+      "ok": true,
+      "votes": [
+        {
+          "pass": false,
+          "severity": "critical",
+          "missing_requirements": [
+            "Adequate dated, authoritative pricing evidence supporting the DeepSeek adoption and cost calculations.",
+            "Verified security, privacy, data-handling, and contractual evidence for routing internal company data to DeepSeek.",
+            "Evidence-based comparison sufficient to support the claim that DeepSeek is cheaper than every other provider.",
+            "A defensible budget model and assumptions supporting the claimed 90% monthly cost reduction."
+          ],
+          "material_errors": [
+            "The artifact makes an immediate ADOPT decision that drives default routing, budget expectations, and sensitive-data handling using explicitly unsupported assertions.",
+            "The stated $0.01-per-million-token price and universal-cheapest claim have no source, date, model/version scope, or usage assumptions.",
+            "Routing all non-premium prompts, including internal company data, is recommended despite unverified security and data-processing suitability.",
+            "The 90% savings claim is unsupported and cannot be used for a provider adoption decision.",
+            "The recommendation acknowledges that it is based on unsupported pricing, creating a material contradiction with the required evidence standard."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Obtain and cite dated official DeepSeek pricing for the exact models, input/output or cached-token categories, regions, and billing units intended for use.",
+            "Build a workload-based cost comparison against the relevant incumbent or alternatives, state token-volume and model-mix assumptions, and recalculate any projected savings.",
+            "Verify and document DeepSeek security, privacy, retention, training-use, data-residency, access-control, and contractual terms before permitting internal company data.",
+            "Define routing boundaries by task and data classification; prohibit sensitive/internal data until the required security review is complete.",
+            "If authoritative pricing or security evidence cannot be obtained, explicitly DEFER or REJECT adoption rather than recommending immediate default routing."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "critical",
+          "missing_requirements": [
+            "Adequate verified evidence for the ADOPT decision that drives default routing, cost projections, and handling of internal company data.",
+            "Official, dated pricing evidence and a workload-based cost calculation supporting the claimed $0.01 per million tokens and 90% savings.",
+            "Security, privacy, data-retention, and contractual verification sufficient to route internal company data to the provider."
+          ],
+          "material_errors": [
+            "The artifact makes an immediate provider adoption and default routing decision using explicitly unsupported pricing claims.",
+            "The claim that DeepSeek is always cheaper than every other provider is unsubstantiated and materially drives the architecture decision.",
+            "Routing all non-premium prompts, including internal company data, is recommended without any security verification.",
+            "The 90% monthly-bill reduction estimate has no documented assumptions, usage baseline, model comparison, or calculation."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Replace unsupported assertions with official, dated provider pricing sources for the specific models and token types proposed for use.",
+            "Define representative workloads and calculate projected costs against the current baseline; document assumptions and sensitivity ranges before making a savings claim.",
+            "Obtain and cite applicable security, privacy, retention, training-use, data-residency, and contractual evidence before routing internal company data.",
+            "Specify routing eligibility, exclusions for sensitive data, fallback behavior, quality/latency acceptance criteria, and an empirical evaluation or pilot gate.",
+            "If required evidence cannot be obtained, explicitly DEFER or REJECT adoption rather than recommending immediate default routing."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "critical",
+          "missing_requirements": [
+            "Adequate dated, authoritative pricing evidence supporting the adoption decision and budget impact.",
+            "Verified security, privacy, and data-handling evidence before routing internal company data.",
+            "Evidence-based comparison sufficient to support the claim that DeepSeek is cheaper than every alternative.",
+            "A substantiated cost model supporting the claimed 90% monthly-bill reduction."
+          ],
+          "material_errors": [
+            "The architecture-driving ADOPT decision is explicitly based on unsupported pricing claims.",
+            "The default routing rule sends internal company data to DeepSeek despite unverified security and data-handling suitability.",
+            "Claims that DeepSeek costs $0.01 per million tokens, is always cheapest, and will reduce spend by 90% are unsubstantiated and materially drive routing and budget decisions.",
+            "The recommendation admits no official source or date is necessary, which violates the evidence requirement for an included provider affecting cost and sensitive data."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Obtain and cite dated authoritative DeepSeek pricing documentation for the exact model(s), token directions, cache/batch terms, and applicable billing conditions used in the proposed routing.",
+            "Build a workload-based cost comparison against the relevant incumbent or alternative providers and calculate the projected monthly impact using explicit assumptions; remove unsupported universal-cheapest and 90% savings claims.",
+            "Verify and document DeepSeek security, privacy, retention, training-use, regional processing, contractual, and access-control terms before permitting internal company data; otherwise exclude sensitive/internal data from the routing rule.",
+            "Define routing eligibility by model capability, workload class, data classification, fallback behavior, and spend/capability guardrails rather than routing all non-premium prompts by default.",
+            "If required evidence cannot be obtained, change the decision to DEFER or reject adoption and route the uncertainty to a bounded empirical evaluation that uses non-sensitive data."
+          ]
+        }
+      ],
+      "resolved_pass": false,
+      "adjudication": null
+    },
+    {
+      "name": "unverified_sensitive_routing_must_fail",
+      "expected_pass": false,
+      "pass_votes": 0,
+      "fail_votes": 3,
+      "majority_pass": false,
+      "stable": true,
+      "ok": true,
+      "votes": [
+        {
+          "pass": false,
+          "severity": "critical",
+          "missing_requirements": [
+            "Verified security, privacy, retention, data residency, training-use, and contractual-control evidence required before approving sensitive-data routing."
+          ],
+          "material_errors": [
+            "The artifact adopts Provider X and enables routing of confidential contracts and employee data while explicitly stating that the relevant privacy and data-handling terms have not been checked.",
+            "The routing decision is materially driven by unsupported model-quality claims despite unknown sensitive-data protections.",
+            "The recommendation to verify security later contradicts the stated requirement that sensitive-data routing requires verified security/privacy/data-handling evidence."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Do not approve or enable sensitive-data routing to Provider X until verified evidence is collected and assessed for privacy terms, retention/deletion, data residency, training use, security controls, and applicable contractual controls.",
+            "Replace the immediate ADOPT/enable decision with an explicit DEFER or REJECT decision for sensitive workloads pending verification.",
+            "After verification, document source-backed findings and define routing eligibility, prohibited data categories, contractual prerequisites, and any required implementation controls before approving use."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "critical",
+          "missing_requirements": [
+            "Verified security, privacy, retention, data residency, training-use, and contractual-control evidence required before routing sensitive business data."
+          ],
+          "material_errors": [
+            "The artifact recommends immediate adoption and sensitive-data routing despite explicitly stating that required privacy and data-handling terms were not checked and key controls are unknown.",
+            "The routing rule sends all internal and sensitive documents to Provider X based only on apparent model quality, which is not sufficient evidence for a sensitive-data decision.",
+            "Deferring security verification until after enabling sensitive-data routing creates an unacceptable unresolved uncertainty for the required decision."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Do not approve or enable sensitive-data routing to Provider X until security/privacy/data-handling evidence has been verified.",
+            "Obtain and document authoritative evidence for retention, training use, data residency, encryption and access controls, subprocessors, incident/security controls, and applicable contractual terms such as a DPA.",
+            "Define an explicit sensitive-data classification and routing policy that blocks or redacts confidential contracts and employee data unless the provider is approved for the relevant data class.",
+            "If evidence cannot be verified, explicitly defer or reject Provider X for sensitive workloads and restrict any evaluation to non-sensitive or properly anonymized data."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "critical",
+          "missing_requirements": [
+            "Verified security, privacy, retention, data residency, training-use, and contractual-control evidence required before approving sensitive-data routing."
+          ],
+          "material_errors": [
+            "The artifact adopts Provider X for confidential contracts and employee data while explicitly stating that privacy and retention terms, data residency, training use, and contractual controls have not been checked.",
+            "The routing rule permits all sensitive documents based only on apparent model quality, which is not sufficient evidence for a sensitive-data handling decision.",
+            "The recommendation to enable sensitive-data routing now and verify security later directly violates the stated requirement that sensitive-data routing requires verified security/privacy/data-handling evidence."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Do not approve or enable sensitive-data routing to Provider X until security/privacy/data-handling evidence is verified.",
+            "Obtain and document verified evidence for Provider X's privacy terms, retention/deletion behavior, training-use policy, data residency and transfer controls, access/security controls, and applicable contractual terms such as a DPA.",
+            "Replace the current adoption decision with an explicit DEFER or REJECT decision for sensitive-data routing until verification is complete.",
+            "Define a conditional routing policy that keeps confidential contracts and employee data out of Provider X pending successful evidence review and any required contractual controls."
+          ]
+        }
+      ],
+      "resolved_pass": false,
+      "adjudication": null
+    }
+  ],
+  "legacy_admission": [
+    {
+      "track_id": "01_openai",
+      "title": "OpenAI platform and model map",
+      "reuse": false,
+      "decision": "REPAIR",
+      "pass_votes": 0,
+      "fail_votes": 3,
+      "stable": true,
+      "resolved_pass": false,
+      "adjudication": null,
+      "votes": [
+        {
+          "pass": false,
+          "severity": "high",
+          "missing_requirements": [
+            "Direct, retrievable official OpenAI documentation URLs and retrieval dates for the architecture-driving claims about current direct-API model availability, pricing, cache-write/cached-token rates, Batch terms, Background mode behavior, webhook retry behavior, rate-tier gating, tool billing, and API-data retention/ZDR behavior.",
+            "A verifiable source trail for claims attributed to an unspecified 'audit.' The audit itself and its alleged official citations are not included, so it cannot serve as evidence for decisions in this artifact."
+          ],
+          "material_errors": [
+            "The artifact labels several material claims as resolved or confirmed '[FACT]' based on 'the audit's cited official pages,' but those official pricing/API/security documentation URLs are not provided in the artifact. This is unsupported evidence for decisions that require an external durable orchestrator, webhook-primary integration, cost-model line items, account-tier deployment gating, and the sensitive-data security roadmap.",
+            "The OpenRouter corroboration does not verify OpenAI direct-API pricing, account-specific billing, API feature availability, or retention behavior. It cannot substantiate the direct-API flagship price used as a confirmed rate-card anchor.",
+            "Section 6 says tool pricing is 'now quantified,' but supplies no actual numerical rates, effective dates, or official pricing URL. This leaves the claimed cost-model inputs unverifiable while asserting that they may dominate token costs.",
+            "The source list is predominantly third-party pricing/blog pages; the few listed OpenAI URLs are product/announcement pages rather than identified documentation pages supporting the specific operational, billing, privacy, and security assertions made. The artifact's stated evidence-tier legend therefore overstates the support actually shown."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "For every claim that drives an OpenAI inclusion, routing, budget, long-running-workflow, or sensitive-data decision, add the exact official OpenAI documentation/pricing URL, page title, retrieval timestamp, and the relevant quoted or precisely cited field/value. Do not cite an absent audit as evidence.",
+            "Replace the current pricing assertions with a dated direct-API rate table sourced from OpenAI's official pricing/model documentation, or mark each unsupported rate as unresolved and exclude it from all rate-card and budget decisions pending the specified billed-account test.",
+            "Add official-source verification for Background mode lifecycle/persistence, webhook delivery and retry semantics, rate limits/account tiers, tool billing units, API-data retention, and ZDR eligibility. If a feature is not verified, make its use provisional rather than an architectural decision.",
+            "Either provide actual current tool-price values with official citations or revise Section 6 to state only the verified billing dimensions and explicitly defer numerical tool-cost modeling until official pricing/account-billing verification.",
+            "After evidence is repaired, retain the existing empirical-test and sensitivity-band approach for economy-tier pricing, cache hit rate, workload quality, retrieval quality, and provisioned-account limits; those deferrals are appropriately bounded and need not be eliminated."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "high",
+          "missing_requirements": [
+            "A decision-usable current model registry/map is missing: the artifact does not provide concrete API model IDs, availability/status, reasoning capability distinctions, context/output limits by model, or a traceable source and retrieval date for each routing-relevant entry.",
+            "A decision-usable tools/capabilities map is missing. Web search, file search, shell/code-interpreter, computer use, MCP, background mode, and webhooks are discussed generally, but the artifact does not establish which current OpenAI API products/models support each feature, applicable constraints, and implementation prerequisites.",
+            "Rate-limit/account-tier coverage is insufficient for deployment planning. It asserts spend-gated tiers and a near-$100 initial cap but provides neither traceable official evidence nor the specific limits/tier conditions needed to determine whether the proposed workload can operate.",
+            "Privacy/retention coverage is not sufficient for a sensitive-data decision. The artifact makes retention, ZDR, and background-mode persistence claims without traceable official sources or a concrete feature-level applicability determination.",
+            "The required architecture-driving evidence is not present in the artifact. Repeated reliance on an unnamed prior 'audit' and its allegedly cited official pages is not a verifiable substitute for including the relevant official URLs and retrieval timestamps."
+          ],
+          "material_errors": [
+            "The artifact treats unsupported claims as resolved facts and carries them into architecture decisions. Examples include the current Sol/Terra/Luna lineup, background-mode/webhook behavior, tool billing structure, account-tier gating, and API-data retention. The document does not provide the cited official documentation URLs for these claims; its source log is predominantly third-party pages and only includes general OpenAI announcement URLs.",
+            "The claimed 'current OpenAI model map' is materially incomplete and cannot safely drive routing: the named tiers are not tied to exact API model identifiers, supported reasoning/tool modalities, lifecycle status, or verified pricing entries.",
+            "Section 6 says tool pricing is 'now quantified,' but provides no actual per-call, storage, container-size, or session-duration figures. Consequently it cannot support the stated cost-model requirement that these be independent budget line items.",
+            "The economy-tier price conflict is appropriately deferred and therefore is not itself blocking. However, the unresolved pricing does not cure the separate lack of sourced, model-specific prices and capabilities for the tiers the artifact otherwise proposes to use in routing and budget sensitivity analysis."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Add a compact, dated OpenAI API registry table with exact model IDs, lifecycle/availability, input/output and cached-token pricing, context/max-output limits, reasoning controls, supported tools/modalities, and direct official pricing/model-documentation URLs for every model retained as a routing candidate.",
+            "Replace references to the unavailable prior audit as evidence with direct, traceable official OpenAI documentation URLs and retrieval timestamps for every claim that drives an INCLUDE/ADOPT, routing, cost, rate-limit, retention, or security decision.",
+            "Add a feature matrix for Responses API tools and async capabilities: web search, file search/vector stores, code interpreter or shell/container execution, computer use, MCP/connectors, background mode, and webhooks. For each, state availability, model/API prerequisites, material limits, pricing unit, retention/ZDR implications, and whether it is included, excluded, or deferred.",
+            "Provide the actual official tool-price figures or explicitly defer use of those tools from budget/routing decisions pending a billed verification. Do not describe pricing as quantified while omitting the figures.",
+            "Document account-tier and rate-limit requirements with official sources, then state the minimum verified tier/limits needed for the target workload and the tested degradation behavior if those limits are unavailable.",
+            "Create the required privacy data-flow determination for each included OpenAI feature, citing official retention/ZDR documentation and distinguishing standard API requests, file/vector-store storage, background responses, webhooks, and hosted execution environments."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "high",
+          "missing_requirements": [
+            "A decision-usable current OpenAI model/capability map: the artifact does not identify concrete API model IDs and does not map which models support reasoning, Responses API, web search, file search, coding/shell/container tools, computer use, caching, and background mode.",
+            "Verifiable first-party evidence for architecture-driving OpenAI pricing, account-tier/rate-limit, retention, background-mode, webhook, and tool-pricing claims. The artifact repeatedly relies on an unnamed external audit's alleged official citations, but does not provide those cited official URLs.",
+            "A sufficiently specific pricing/tool-cost map for the stated purpose. Tool pricing is described as heterogeneous but the actual per-call, storage, container/session, and relevant token rates are omitted.",
+            "A concrete limits map. Account-tier gating is mentioned, but no verified request/token/concurrency limits or model/account applicability is supplied."
+          ],
+          "material_errors": [
+            "The document treats claims allegedly contained in an external audit as [FACT] or as stronger evidence without including the audit or its official source URLs. This is not independently reviewable evidence and is insufficient for claims that drive deployment prerequisites, cost-model requirements, retention/security treatment, and architectural handling of async execution.",
+            "The sole live corroboration is an OpenRouter listing, which cannot verify OpenAI direct-API catalog availability, direct billing rates, API limits, retention behavior, or tool support. It is insufficient support for adopting the stated flagship direct-API price point as a confirmed OpenAI fact.",
+            "The claimed model taxonomy and pricing map are not tied to verifiable current first-party catalog/pricing URLs. Because the purpose is specifically a current OpenAI platform and model map, this leaves the central map unsupported.",
+            "The artifact says tool pricing is 'now quantified' but supplies no numbers. Therefore it cannot directly support the required downstream cost modeling of web search, file search, and hosted shell/code-interpreter usage.",
+            "The unresolved economy-tier price is appropriately routed to a billed test and would not alone block acceptance; however, the broader unverified pricing and capability map prevents an architecture decision from being grounded in strong evidence."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Add direct, retrievable first-party URLs and retrieval dates for every architecture-driving claim, at minimum OpenAI pricing, model catalog/model pages, rate-limit tier documentation, Responses/background/webhook documentation, tool pricing/tool documentation, and API data-retention/ZDR documentation. Do not cite an unnamed audit as evidence.",
+            "Replace generic family labels with the concrete current API model IDs being evaluated, and add a compact capability matrix covering reasoning, context/output limits, web search, file search, coding/shell/container capability, computer use where applicable, prompt caching, background mode, and routing status.",
+            "Provide the actual published tool-price line items needed for cost modeling, including units and applicability, or explicitly mark each as DEFERRED and exclude it from any current budget decision.",
+            "For every price used in a budget, routing, or adoption decision, provide its direct official source, retrieval timestamp, unit, model ID, and relevant billing/account assumptions. Retain the billed-test sensitivity plan for genuine pricing conflicts.",
+            "Add a verified rate-limit/account-tier table or explicitly defer production-volume sizing until account provisioning, while ensuring no current deployment recommendation depends on unverified throughput assumptions."
+          ]
+        }
+      ]
+    },
+    {
+      "track_id": "02_anthropic",
+      "title": "Anthropic platform and model map",
+      "reuse": false,
+      "decision": "REPAIR",
+      "pass_votes": 1,
+      "fail_votes": 2,
+      "stable": false,
+      "resolved_pass": false,
+      "adjudication": {
+        "pass": false,
+        "severity": "high",
+        "blocking_reason": "The dissent identifies a real blocker: this artifact adopts unverified, architecture-driving claims about the current model lineup, pricing, availability, privacy eligibility, and fallback behavior as FACT, then uses them to recommend routing, a $150/month architecture, and data-handling lanes. Its unavailable prior audit and unverified documentation paths are not sufficient evidence, and its own failed live-verification note leaves these decisions unsupported. The $150/month recommendation also lacks a quantitative workload and capped-spend model. These are not merely deferred uncertainties because the artifact actively relies on them for adoption and routing conclusions.",
+        "repair_instructions": [
+          "Live-verify each architecture-driving claim from current official Anthropic sources before retaining it as FACT: model IDs and availability, context/output limits, prices and promotion terms, cache minimums and pricing, Batch/Fast restrictions, retention/ZDR/HIPAA eligibility, and Managed Agents availability and limits. Record resolved URLs, access date, and claim-to-source mapping.",
+          "Until verification is complete, mark the affected models, features, pricing, privacy controls, and routing recommendations DEFERRED and exclude them from adoption, budget, routing, and sensitive-data decisions.",
+          "Add a reproducible $150/month cost model with monthly input/output volumes by lane, cache read/write assumptions, Batch share, explicit dollar or token caps for escalation models and Fast mode, and an enforcement/throttle mechanism.",
+          "Establish whether the API exposes effective-model and safety-fallback provenance. If it does not, remove the requirement to log an unavailable fallback reason; instead treat Fable provenance as unknown, prohibit provenance-dependent use, and require independent output acceptance checks."
+        ]
+      },
+      "votes": [
+        {
+          "pass": false,
+          "severity": "high",
+          "missing_requirements": [
+            "Verifiable primary-source evidence for the current Anthropic model lineup, model availability, pricing, context limits, caching terms, and retention/security eligibility that drive the recommended routing and budget decisions.",
+            "A source-validity check establishing that the cited Anthropic documentation/news URLs and the asserted audit corrections correspond to real, current official materials."
+          ],
+          "material_errors": [
+            "The architecture-driving claims rely on apparently unsupported or fabricated model/product names and facts, including \u201cFable 5,\u201d \u201cMythos 5,\u201d \u201cOpus 5,\u201d \u201cSonnet 5,\u201d \u201cHaiku 4.5,\u201d Project Glasswing, and the claimed 2026 pricing/promotional schedule. These claims determine the proposed model map, routing roles, fallback behavior, and $150/month architecture.",
+            "The artifact treats an unspecified prior \u201caudit\u201d as definitive evidence, but the audit artifact, its citations, and their quoted source content are not present for validation. A statement that an audit provided citation-backed corrections is not itself evidence for adoption-driving facts.",
+            "The proposed pricing, cache minimums, context/output limits, Fast mode restrictions, Managed Agents eligibility, and retention matrix are all material to budget, routing, and sensitive-data decisions, yet are not supported by independently verifiable source excerpts or validated official URLs in the artifact.",
+            "The source list includes numerous future-dated or implausible third-party references and does not establish that the cited official Anthropic paths/news announcements actually support the asserted facts. The artifact's own admission that live verification failed leaves the core current-state claims unresolved.",
+            "The requirement to map current Claude models and likely routing roles cannot be accepted because the asserted current platform map is the unsupported foundation of every resulting architecture recommendation."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Revalidate the current Anthropic lineup using live official Anthropic documentation and provide the exact official URLs, model IDs, availability status, context/output limits, and pricing applicable to the intended API/channel.",
+            "Remove or explicitly reject any model, product, feature, announcement, or date that cannot be verified from official current sources; do not retain it as a FACT solely because a prior audit allegedly asserted it.",
+            "Rebuild the pricing table and $150/month routing recommendations from verified prices and clearly state the assumed input/output volumes, cache behavior, Batch applicability, and any channel-specific pricing differences.",
+            "Verify feature-specific retention, ZDR/HIPAA eligibility, managed-agent availability, and tool/data-handling claims directly from official documentation before retaining the sensitive/non-sensitive routing matrix.",
+            "If a fact cannot be confirmed before the decision, mark the associated provider/model/feature DEFERRED and ensure it is excluded from adoption, budget, routing, and sensitive-data decisions until implementation-time verification is complete."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "high",
+          "missing_requirements": [
+            "A reproducible $150/month cost model: expected monthly input/output/cache-write/cache-read volumes by lane, Batch eligibility assumptions, explicit Opus/Fable/Fast caps, and a calculation showing the recommended default routing remains within budget at steady-state prices.",
+            "Verifiable primary-source support for architecture-driving model availability, pricing, retention, Managed Agents eligibility, and Fable fallback behavior. The artifact attributes these facts to an unavailable prior audit and generic documentation paths rather than providing directly traceable evidence/excerpts or an implementation-time validation gate before adopting them.",
+            "An operationally feasible effective-model/fallback observability design. The artifact requires logging effective model and fallback reason while also characterizing the provider fallback as silent, without establishing that the API exposes a model/fallback signal or defining an alternative verification method."
+          ],
+          "material_errors": [
+            "The stated '$150/mo' value architecture is not decision-ready: it recommends Sonnet as the large-majority default and permits Opus/Fable/Fast exceptions, but supplies no workload assumptions, token budget, cache-hit assumption, or numeric escalation caps. Pricing alone does not demonstrate compliance with the budget that materially drives the routing recommendation.",
+            "The artifact adopts numerous material claims as FACT based on an audit that is not included in the artifact and acknowledges that it could not independently verify them. These claims directly drive ADOPT/INCLUDE decisions, pricing assumptions, privacy lane eligibility, and routing. The listed official documentation URLs are useful leads but do not make the claimed evidence trail independently auditable as presented.",
+            "There is an unresolved internal operational contradiction around Fable substitution: it says the safety classifier can silently fall back, yet mandates per-call effective-model and fallback-reason logging and a fallback-flag check. Unless a documented API response field, event, or deterministic post-call mechanism exists, this required quality control cannot be implemented as specified."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Add a compact $150/month model using stated monthly task/token volumes, input/output mix, cache behavior, Batch share, and hard per-period dollar or token caps for Opus, Fable, and Fast mode. State the resulting maximum monthly spend and the enforcement mechanism.",
+            "Before retaining any adoption, routing, cost, or data-handling conclusion as FACT, attach direct official URLs with access date and a claim-to-source mapping (or quoted relevant documentation text) for each model's availability, prices, context limits, cache minima, Batch retention, Managed Agents retention/eligibility, and Fast-mode restrictions. If this cannot be done now, change the affected recommendation to DEFER and make live verification a pre-adoption gate rather than a note before later cost-model lock-in.",
+            "Document exactly how requested model, actual effective model, and safety-fallback reason are obtained from the API. If Anthropic does not expose those values, revise the Fable control to a feasible approach (for example, treat output provenance as unknown, prohibit Fable where provenance is required, and use independent evaluation/acceptance checks) rather than requiring an unavailable fallback flag.",
+            "Keep the explicitly deferred tool pricing, account limits, and Managed Agent operational-limit items as implementation/evaluation gates; those are acceptable once the budget model and adoption-driving evidence are repaired."
+          ]
+        },
+        {
+          "pass": true,
+          "severity": "medium",
+          "missing_requirements": [],
+          "material_errors": [
+            "The $150/month value architecture assigns routing roles but does not include workload-volume assumptions, token caps, or a spend allocation demonstrating that the proposed default Sonnet lane fits the budget. This is non-blocking because the artifact does not claim a finalized cost model and explicitly routes pricing verification to the COST_MODEL lock-in step.",
+            "Several architecture-driving facts are adopted from an audit that is not included with this artifact. The listed primary Anthropic documentation paths make the claims independently checkable, but the time-sensitive model, pricing, availability, and retention values require the stated final live verification before implementation or budget lock-in.",
+            "Tool pricing, Managed Agents operational limits, and account-specific rate limits remain unresolved. The artifact appropriately avoids using these unknowns for a definitive sensitive-data adoption decision and assigns implementation-time and empirical validation actions."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Before COST_MODEL lock-in, live-verify the model lineup, model IDs, pricing, promotion end date, cache minima, Batch retention, Fast-mode availability, and data-retention/ZDR eligibility against the cited official Anthropic documentation; record access date and resolved URLs.",
+            "Add a separate quantified $150/month cost model with expected monthly input/output/cache/batch volumes, per-lane caps, escalation allowance, and a shutdown/throttle threshold.",
+            "Before enabling Managed Agents, server-side tools, MCP connectors, Batch, or code execution for any lane, verify the applicable retention, ZDR, HIPAA, pricing, concurrency, and regional/account controls and update the lane matrix accordingly.",
+            "Implement requested-model/effective-model/fallback-reason logging and validate provider fallback detection in the Fable regression evaluation before treating Fable as a quality-tier dependency."
+          ]
+        }
+      ]
+    },
+    {
+      "track_id": "07_deployment",
+      "title": "Cloud, storage, PWA, machine independence",
+      "reuse": false,
+      "decision": "REPAIR",
+      "pass_votes": 1,
+      "fail_votes": 2,
+      "stable": false,
+      "resolved_pass": false,
+      "adjudication": {
+        "pass": false,
+        "severity": "high",
+        "blocking_reason": "The recommended default storage architecture relies on the unsupported/uncited claim that Cloudflare R2 has \"versioning on,\" while deferring the retention, rollback, and backup-independence policy needed for recovery. This is an architecture-driving security/recovery capability, not a non-blocking improvement. The value-tier secrets design also claims to close bootstrap gaps without defining how runtime secrets reach and survive restart on the VM while the age identity remains separate.",
+        "repair_instructions": [
+          "Verify R2 object-versioning support against current Cloudflare primary documentation. If native versioning is unavailable, replace the claim with an implementable supported design, such as immutable/versioned object keys, documented lifecycle/retention controls, and independently credentialed backup copies, or choose storage with verified native versioning.",
+          "State the minimum recovery guarantees and operational flow for the selected artifact/SQLite-backup store: rollback method, retention behavior, independent backup location/credentials, and what remains deferred to SECURITY_ROADMAP.",
+          "Document the value-tier secret bootstrap and lifecycle path: where decryption occurs, how secrets are delivered to the running VM process, what persists across restart/redeploy, and how rotation and recovery work without co-locating the age identity with repository ciphertext."
+        ]
+      },
+      "votes": [
+        {
+          "pass": true,
+          "severity": "medium",
+          "missing_requirements": [],
+          "material_errors": [
+            "GitHub Codespaces overage is expressed as \"$0.18/core-hour\"; GitHub's commonly published $0.18 figure applies to a 2-core machine-hour, so the unit should be verified and corrected before using it in any budget calculation.",
+            "The value-tier SOPS/age approach is viable for solo use, but the report does not specify the operational deployment path by which the VM receives decrypted runtime secrets without permanently placing the age identity alongside repository ciphertext. This is a non-blocking implementation/security-roadmap item because no detailed automated deployment flow is adopted here.",
+            "Several cost conclusions rely on ranges corroborated by third-party trackers whose future-dated pages and availability should not be treated as authoritative. The primary vendor links listed are sufficient for the present directional decisions, but live primary pricing should be checked at provisioning as the report already requires for Hetzner."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Before budgeting Codespaces usage, replace \"$0.18/core-hour\" with the vendor's current machine-hour rate and state the selected machine size.",
+            "In SECURITY_ROADMAP or deployment implementation, define the age-key/bootstrap mechanism: for example, an operator-held key used to produce a runtime-only secret artifact, or a narrowly scoped CI/deployment secret with documented rotation and recovery procedures.",
+            "At provisioning and before any provider switch, validate Fly, Railway, Neon, R2, and Codespaces charges against the linked primary pricing pages rather than third-party calculators."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "high",
+          "missing_requirements": [
+            "The report does not make a concrete Windows/macOS machine-independence decision. It identifies Git and optional Codespaces, but does not specify a portable local-development/runtime contract (for example, devcontainer/container strategy, supported host prerequisites, canonical commands, and how local machines safely interact with the cloud control plane). This is a required purpose dimension, not merely a future implementation detail.",
+            "The adopted value-tier secrets design lacks a defined secure deployment/bootstrap path for making decrypted runtime credentials available to the control-plane VM without placing the decryption identity there. The stated separation of ciphertext and decryption identity does not by itself explain deployment, restart, rotation, or recovery."
+          ],
+          "material_errors": [
+            "The recommended R2 configuration states \"versioning on\" as an architecture/security property, but the cited R2 pricing material does not substantiate that R2 bucket versioning is available and configured as assumed. This is an architecture-driving storage protection claim, not a harmless cost detail; it must be verified against current Cloudflare primary documentation or replaced with an explicitly supported retention/backup mechanism.",
+            "The report defers the object-storage backup-account/versioning policy to SECURITY_ROADMAP while simultaneously relying on versioning and separate backup credentials in its recommended value architecture. The dependency must be resolved enough to make the selected R2/Litestream recovery design implementable, even if the broader security roadmap remains deferred."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Add an explicit portability operating model: define the supported Windows and macOS workflow, whether a devcontainer/Docker-based environment is mandatory or optional, canonical bootstrap/test/deploy commands, and the rule that laptops access canonical cloud state only through authenticated APIs rather than local database-file synchronization.",
+            "Document the value-tier secret bootstrap and lifecycle flow: where decryption occurs, how secrets reach the running process, what is persisted on the VM, how restart/redeployment works, and how per-provider credential rotation and key recovery are performed. Keep full enterprise IAM policy deferred if desired.",
+            "Before retaining R2 as the recommended artifact store with \"versioning on,\" cite current Cloudflare primary documentation proving the relevant versioning feature and its operational limitations. If it is unsupported or unsuitable, replace that row with an actually supported configuration such as lifecycle/retention plus independently credentialed immutable backup copies, and revise recovery claims accordingly."
+          ]
+        },
+        {
+          "pass": false,
+          "severity": "high",
+          "missing_requirements": [
+            "A verified, implementable retention/rollback design for the recommended default R2 artifact store."
+          ],
+          "material_errors": [
+            "The recommended value architecture specifies Cloudflare R2 with \"versioning on\" and treats versioning as a decision factor. R2 does not provide S3 bucket object-versioning semantics. This is a material unsupported security/recovery capability claim for an included storage provider, and the deferred SECURITY_ROADMAP cannot leave the selected architecture assuming that capability exists."
+          ],
+          "truncation_or_meta_failure": false,
+          "repair_instructions": [
+            "Correct the R2 recommendation to reflect its actual supported retention and recovery capabilities. Do not state or cost it as having object versioning unless verified current primary documentation establishes that capability.",
+            "Specify the architecture decision needed for artifact rollback and backup independence: either use an R2-compatible design based on immutable/versioned object keys plus documented lifecycle/retention controls and independent backup copies, or select a storage service with verified native object versioning if native version rollback is required.",
+            "Add a primary-source citation for the chosen R2 retention/immutability mechanism and explicitly state which recovery guarantees remain deferred to SECURITY_ROADMAP."
+          ]
+        }
+      ]
+    },
+    {
+      "track_id": "03_other_providers",
+      "title": "Third-party provider value test",
+      "reuse": false,
+      "decision": "REPAIR",
+      "reason": "failed deterministic legacy contract",
+      "pass_votes": 0,
+      "fail_votes": 0,
+      "stable": true,
+      "votes": []
+    },
+    {
+      "track_id": "04_routing",
+      "title": "Task routing and adaptive escalation",
+      "reuse": false,
+      "decision": "REPAIR",
+      "reason": "failed deterministic legacy contract",
+      "pass_votes": 0,
+      "fail_votes": 0,
+      "stable": true,
+      "votes": []
+    },
+    {
+      "track_id": "05_context",
+      "title": "Context, retrieval, Graphify, and memory",
+      "reuse": false,
+      "decision": "REPAIR",
+      "reason": "failed deterministic legacy contract",
+      "pass_votes": 0,
+      "fail_votes": 0,
+      "stable": true,
+      "votes": []
+    },
+    {
+      "track_id": "06_long_running",
+      "title": "Long-running resumable workloads",
+      "reuse": false,
+      "decision": "REPAIR",
+      "reason": "failed deterministic legacy contract",
+      "pass_votes": 0,
+      "fail_votes": 0,
+      "stable": true,
+      "votes": []
+    },
+    {
+      "track_id": "08_security",
+      "title": "Security and future multi-tenant operations",
+      "reuse": false,
+      "decision": "REPAIR",
+      "reason": "failed deterministic legacy contract",
+      "pass_votes": 0,
+      "fail_votes": 0,
+      "stable": true,
+      "votes": []
+    },
+    {
+      "track_id": "09_cost_eval",
+      "title": "Cost model and empirical evaluation",
+      "reuse": false,
+      "decision": "REPAIR",
+      "reason": "failed deterministic legacy contract",
+      "pass_votes": 0,
+      "fail_votes": 0,
+      "stable": true,
+      "votes": []
+    }
+  ],
+  "candidate_admission": [
+    {
+      "track_id": "03_other_providers",
+      "candidate_path": "recovery_v0_2_1\\candidates\\research_03_other_providers_validated_attempt_3.md",
+      "deterministic": {
+        "pass": true,
+        "errors": [],
+        "warnings": [],
+        "metrics": {
+          "words": 3970,
+          "headings": 17,
+          "urls": 35
+        }
+      },
+      "semantic": {
+        "name": "candidate_03_other_providers_0",
+        "expected_pass": true,
+        "pass_votes": 2,
+        "fail_votes": 1,
+        "majority_pass": true,
+        "stable": false,
+        "ok": true,
+        "votes": [
+          {
+            "pass": true,
+            "severity": "medium",
+            "missing_requirements": [],
+            "material_errors": [
+              "DeepSeek\u2019s architecture cost scenario and \u2018cheapest workhorse tier\u2019 conclusion rely on six third-party tracker reports rather than a directly captured official price table. The report correctly labels this limitation and requires registry-refresh verification, so it is a non-blocking implementation-time validation item rather than an unresolved architecture decision.",
+              "The local-model TCO comparison uses explicitly unverified illustrative GPU rental rates. It is appropriately not used as a definitive purchase decision and is routed to an actual-quote empirical test.",
+              "Gemini\u2019s comparative low-cost/triage positioning is audit-verified but not supported with reproduced pricing arithmetic in this track; its inclusion is contingent on benchmark and security review, limiting the impact."
+            ],
+            "truncation_or_meta_failure": false,
+            "repair_instructions": [
+              "Before enabling DeepSeek in production routing or using its figures in a finalized monthly budget, directly capture and date the official DeepSeek price card, reconcile it to the tracker figures, and update the versioned provider registry.",
+              "Before making a final self-hosting versus hosted-cost decision, replace illustrative GPU rental estimates with current provider quotes and measured workload throughput.",
+              "During Gemini implementation review, record the live tier pricing and validate the File Search/cache retention and two-pass retrieval design against the intended data classifications."
+            ]
+          },
+          {
+            "pass": true,
+            "severity": "medium",
+            "missing_requirements": [],
+            "material_errors": [
+              "DeepSeek\u2019s exact V4 price figures materially inform the illustrative budget and low-cost workhorse rationale, but remain tracker-corroborated rather than directly verified from DeepSeek\u2019s live official price card. The report appropriately labels this limitation and routes it to implementation-time confirmation, so it is non-blocking only because routing is gated and prices must be refreshed before use.",
+              "The statement that DeepSeek is \"the cheapest workhorse tier available\" is a comparative architecture claim not fully demonstrated with directly cited, current Gemini and other relevant hosted-tier price inputs in this track.",
+              "The OpenRouter credit-purchase example may ambiguously characterize the 5.5% charge: whether $100 is the customer\u2019s all-in payment or the intended inference-credit amount should be confirmed against the live billing semantics before using the $94.50 usable-credit calculation.",
+              "Several governance and capability claims are marked AUDIT-VERIFIED from a prior audit rather than directly re-fetched in this pass. This is acceptable for contingent benchmark recommendations, but must not substitute for implementation-time security review before sensitive-data approval."
+            ],
+            "truncation_or_meta_failure": false,
+            "repair_instructions": [
+              "Before enabling DeepSeek in production or finalizing its budget allocation, directly verify and archive the live official DeepSeek price card, model availability, cache semantics, and pending peak-pricing status; update the versioned registry from that primary evidence.",
+              "Replace or qualify the unsupported \"cheapest workhorse tier available\" wording unless a dated comparison against the applicable Gemini and other candidate hosted tiers is added.",
+              "Confirm OpenRouter\u2019s precise fee/credit accounting model and revise the worked example so it clearly distinguishes customer payment, platform fee, and usable inference credit.",
+              "At implementation time, complete the stated provider security reviews\u2014especially retention, training use, residency, subprocessors, and ZDR feature trade-offs\u2014before approving any provider for a classification beyond the current default-deny allowlist."
+            ]
+          },
+          {
+            "pass": false,
+            "severity": "high",
+            "missing_requirements": [],
+            "material_errors": [
+              "DeepSeek is included in routing and the ~$150 value architecture on specific V4-Flash price figures, yet those figures are explicitly only tracker-corroborated and not directly verified from DeepSeek's official price card. This violates the requirement for strong evidence for pricing claims that materially drive an ADOPT/INCLUDE recommendation, budget calculation, and routing rule.",
+              "The proposed implementation-time registry refresh does not resolve the current decision defect: the report presently concludes that DeepSeek is the cheapest non-sensitive workhorse and calculates monthly spend from unverified vendor pricing. Until the official price card is directly checked, the architecture-driving cost comparison remains unsupported."
+            ],
+            "truncation_or_meta_failure": false,
+            "repair_instructions": [
+              "Directly verify and cite the live official DeepSeek price table, including model identifiers, cache-hit/cache-miss input prices, output prices, effective date, currency, and any peak-period surcharge status; then reconcile the verified figures against the tracker consensus and rerun the \u00a73 arithmetic.",
+              "If direct official verification cannot be obtained, change DeepSeek from included/budgeted routing to an explicit deferred empirical/procurement-validation candidate and remove its current cheapest-workhorse and numeric budget conclusions from the recommended architecture."
+            ]
+          }
+        ],
+        "resolved_pass": true,
+        "adjudication": {
+          "pass": true,
+          "severity": "medium",
+          "blocking_reason": "The dissent identifies a real evidence limitation, but not a HIGH blocker in this artifact. DeepSeek pricing is explicitly labeled tracker-corroborated rather than vendor-audited, the arithmetic is presented as an illustrative scenario, production routing is classification-gated, and the report requires direct official price-card verification at registry refresh before live budgeting/routing. Six named independent trackers provide adequate provisional support for a contingent benchmark and non-sensitive candidate inclusion; the report does not conceal the uncertainty or use it to approve sensitive-data handling. The unsupported comparative wording that it is the \"cheapest workhorse tier available\" remains a medium-strength issue because the corresponding current competitor-price comparison is not reproduced here.",
+          "repair_instructions": [
+            "Before production enablement or final monthly-budget allocation, directly capture and archive DeepSeek's live official price card, including cache-hit/cache-miss input prices, output prices, model availability, currency, effective date, and peak-period status; reconcile it with the tracker figures and update the registry and \u00a73 arithmetic.",
+            "Qualify or remove the statement that DeepSeek is the \"cheapest workhorse tier available\" unless the report adds a dated, like-for-like comparison against the applicable Gemini and other candidate hosted tiers.",
+            "Confirm the exact OpenRouter payment-versus-credit fee semantics before relying on the $94.50 usable-credit example in finalized budgeting.",
+            "Complete the stated provider security and retention reviews before approving any provider for sensitive or otherwise higher-risk classifications."
+          ]
+        }
+      },
+      "promotable": true,
+      "repair_seed": true,
+      "unreadable_candidates": []
+    }
+  ],
+  "notes": [
+    "Preflight PASS means ONLY the controlled validator regression suite passed; it does NOT mean any real artifact is reusable.",
+    "Legacy artifact admission independently classifies each prior track as REUSE or REPAIR.",
+    "Historical candidate admission promotes previously paid work before any regeneration.",
+    "Unreadable historical candidates are logged and skipped instead of aborting preflight.",
+    "Split semantic votes receive one bounded adjudication; deterministic defects never depend on a semantic vote.",
+    "Real research artifacts are admission inputs, never semantic calibration goldens.",
+    "Rejected but structurally valid historical candidates are retained as repair seeds.",
+    "No research/final artifact is generated or overwritten by preflight.",
+    "Semantic calibration/admission uses no web search.",
+    "A cached PASS is reused until validator code/contracts/calibration files change."
+  ]
+}
