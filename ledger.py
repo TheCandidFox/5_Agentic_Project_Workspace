@@ -518,6 +518,17 @@ SCHEMA_MIGRATIONS: tuple[tuple[str, str], ...] = (
         ON provider_calls(status, started_at);
         """,
     ),
+    (
+        "0008_recovery_observability",
+        """
+        ALTER TABLE provider_calls ADD COLUMN failure_kind TEXT;
+        ALTER TABLE provider_calls ADD COLUMN response_excerpt TEXT;
+        ALTER TABLE provider_calls ADD COLUMN response_excerpt_sha256 TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_provider_calls_failure_kind
+        ON provider_calls(failure_kind, status);
+        """,
+    ),
 )
 
 

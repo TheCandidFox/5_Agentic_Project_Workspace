@@ -34,6 +34,28 @@ class AmbiguousProviderCall(ProviderGatewayError):
 class ProviderResponseError(ProviderGatewayError):
     """A provider response failed identity, usage, cost, or schema checks."""
 
+    def __init__(self, message: str, *, failure_kind: str = "response-invalid"):
+        super().__init__(message)
+        self.failure_kind = _safe_schema_value("failure_kind", failure_kind)
+
+
+class ProviderCallFailed(ProviderResponseError):
+    """A provider returned a measured response with a known failed outcome."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        failure_kind: str,
+        retryable: bool,
+        actual_cost_usd: float,
+        provider_call_id: str,
+    ) -> None:
+        super().__init__(message, failure_kind=failure_kind)
+        self.retryable = bool(retryable)
+        self.actual_cost_usd = float(actual_cost_usd)
+        self.provider_call_id = provider_call_id
+
 
 class ProviderExecutionMode(str, Enum):
     OFFLINE_SIMULATION = "offline-simulation"
@@ -42,6 +64,14 @@ class ProviderExecutionMode(str, Enum):
 
 _SAFE_ROUTE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$")
 _SAFE_SCHEMA = re.compile(r"^[a-z][a-z0-9.-]{0,119}$")
+_TRUNCATION_STOP_REASONS = frozenset(
+    {"length", "max-output-tokens", "max-tokens"}
+)
+_SECRET_ASSIGNMENT = re.compile(
+    r"(?i)(api[_-]?key|password|secret|access[_-]?token)(\s*[:=]\s*)[^\s,;]+"
+)
+_BEARER_SECRET = re.compile(r"(?i)(bearer\s+)[A-Za-z0-9._~+/=-]+")
+_PROVIDER_SECRET = re.compile(r"\b(?:sk|sk-ant)-[A-Za-z0-9_-]{12,}\b")
 
 
 def _safe_route_value(name: str, value: str) -> str:
@@ -54,6 +84,25 @@ def _safe_schema_value(name: str, value: str) -> str:
     if not isinstance(value, str) or not _SAFE_SCHEMA.fullmatch(value):
         raise ValueError(f"{name} must use a bounded lowercase identifier")
     return value
+
+
+def _normalized_stop_reason(value: str | None) -> str:
+    return (
+        (value or "").strip().casefold().replace(" ", "-").replace("_", "-")
+    )
+
+
+def _safe_response_excerpt(text: str | None, *, maximum: int = 4_000) -> str | None:
+    if not isinstance(text, str) or not text or "\x00" in text:
+        return None
+    redacted = _SECRET_ASSIGNMENT.sub(r"\1\2[REDACTED]", text)
+    redacted = _BEARER_SECRET.sub(r"\1[REDACTED]", redacted)
+    redacted = _PROVIDER_SECRET.sub("[REDACTED]", redacted)
+    if len(redacted) <= maximum:
+        return redacted
+    marker = "\n...[BOUNDED EXCERPT]...\n"
+    side = (maximum - len(marker)) // 2
+    return redacted[:side] + marker + redacted[-side:]
 
 
 def strict_json_object(text: str) -> Mapping[str, Any]:
@@ -264,6 +313,8 @@ class ProviderCallStore:
                     status='completed',provider_request_id=?,response_sha256=?,
                     response_json=?,input_tokens=?,output_tokens=?,
                     estimated_cost_usd=?,latency_ms=?,stop_reason=?,error=NULL,
+                    failure_kind=NULL,response_excerpt=NULL,
+                    response_excerpt_sha256=NULL,
                     completed_at=?,updated_at=?
                 WHERE provider_call_id=? AND status='dispatching'
                 """,
@@ -292,16 +343,27 @@ class ProviderCallStore:
         response: ProviderResponse | None = None,
         response_sha256: str | None = None,
         actual_cost_usd: float | None = None,
+        failure_kind: str = "transport-ambiguous",
+        response_excerpt: str | None = None,
     ) -> None:
         now = utc_now()
         safe_error = f"{type(error).__name__}: {error}"[:4_000]
+        safe_kind = _safe_schema_value("failure_kind", failure_kind)
+        safe_excerpt = _safe_response_excerpt(response_excerpt)
+        excerpt_sha256 = (
+            hashlib.sha256(safe_excerpt.encode("utf-8")).hexdigest()
+            if safe_excerpt is not None
+            else None
+        )
         with self.ledger.connect() as con:
-            con.execute(
+            cursor = con.execute(
                 """
                 UPDATE provider_calls SET
                     status='failed',provider_request_id=?,response_sha256=?,
                     input_tokens=?,output_tokens=?,estimated_cost_usd=?,
-                    latency_ms=?,stop_reason=?,error=?,completed_at=?,updated_at=?
+                    latency_ms=?,stop_reason=?,error=?,failure_kind=?,
+                    response_excerpt=?,response_excerpt_sha256=?,
+                    completed_at=?,updated_at=?
                 WHERE provider_call_id=? AND status='dispatching'
                 """,
                 (
@@ -313,11 +375,16 @@ class ProviderCallStore:
                     response.latency_ms if response else None,
                     response.stop_reason if response else None,
                     safe_error,
+                    safe_kind,
+                    safe_excerpt,
+                    excerpt_sha256,
                     now,
                     now,
                     call_id,
                 ),
             )
+            if cursor.rowcount != 1:
+                raise AmbiguousProviderCall("provider call failure was not durably recorded")
 
 
 class GovernedProviderGateway:
@@ -470,19 +537,34 @@ class GovernedProviderGateway:
                 max_output_tokens=route.max_output_tokens,
             )
             if response.provider != route.provider or response.model != route.model:
-                raise ProviderResponseError("provider response route identity mismatch")
+                raise ProviderResponseError(
+                    "provider response route identity mismatch",
+                    failure_kind="response-identity",
+                )
             if not isinstance(response.usage.input_tokens, int) or not isinstance(
                 response.usage.output_tokens, int
             ):
-                raise ProviderResponseError("provider usage must contain integer token counts")
+                raise ProviderResponseError(
+                    "provider usage must contain integer token counts",
+                    failure_kind="usage-invalid",
+                )
             if response.usage.input_tokens < 0 or response.usage.output_tokens < 0:
-                raise ProviderResponseError("provider usage token counts must be non-negative")
+                raise ProviderResponseError(
+                    "provider usage token counts must be non-negative",
+                    failure_kind="usage-invalid",
+                )
             if self.execution_mode == ProviderExecutionMode.LIVE and (
                 response.usage.input_tokens == 0 or response.usage.output_tokens == 0
             ):
-                raise ProviderResponseError("live provider usage must be measurable")
+                raise ProviderResponseError(
+                    "live provider usage must be measurable",
+                    failure_kind="usage-invalid",
+                )
             if response.usage.output_tokens > route.max_output_tokens:
-                raise ProviderResponseError("provider output usage exceeds the approved limit")
+                raise ProviderResponseError(
+                    "provider output usage exceeds the approved limit",
+                    failure_kind="usage-invalid",
+                )
             response_sha = hashlib.sha256(response.text.encode("utf-8")).hexdigest()
             actual_cost = (
                 0.0
@@ -490,7 +572,16 @@ class GovernedProviderGateway:
                 else self._actual_cost(response, route)
             )
             if actual_cost > quote + 1e-12 or actual_cost > maximum + 1e-12:
-                raise ProviderResponseError("provider usage cost exceeds its authorization")
+                raise ProviderResponseError(
+                    "provider usage cost exceeds its authorization",
+                    failure_kind="cost-exceeded",
+                )
+            stop_reason = _normalized_stop_reason(response.stop_reason)
+            if stop_reason in _TRUNCATION_STOP_REASONS:
+                raise ProviderResponseError(
+                    "provider response reached its output limit before completion",
+                    failure_kind="response-truncated",
+                )
             parsed = parser(strict_json_object(response.text))
             if not isinstance(parsed, Mapping):
                 raise TypeError("provider response parser must return a mapping")
@@ -539,12 +630,21 @@ class GovernedProviderGateway:
                     )
                 except Exception:
                     actual_cost = None
+            failure_kind = (
+                exc.failure_kind
+                if isinstance(exc, ProviderResponseError)
+                else "response-schema"
+                if response is not None
+                else "transport-ambiguous"
+            )
             self.store.fail(
                 call_id,
                 exc,
                 response=response,
                 response_sha256=response_sha,
                 actual_cost_usd=actual_cost,
+                failure_kind=failure_kind,
+                response_excerpt=response.text if response is not None else None,
             )
             if actual_cost is not None:
                 self.budget.settle(reservation_id, actual_cost)
@@ -562,4 +662,12 @@ class GovernedProviderGateway:
                         stop_reason=response.stop_reason,
                         error=f"{type(exc).__name__}: {exc}"[:4_000],
                     )
+            if response is not None and actual_cost is not None:
+                raise ProviderCallFailed(
+                    str(exc),
+                    failure_kind=failure_kind,
+                    retryable=failure_kind == "response-truncated",
+                    actual_cost_usd=actual_cost,
+                    provider_call_id=call_id,
+                ) from exc
             raise

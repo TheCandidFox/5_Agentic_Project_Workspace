@@ -51,13 +51,17 @@ class ProviderAdapter:
             usage_obj = getattr(r, "usage", None)
             input_tokens = int(getattr(usage_obj, "input_tokens", 0) or 0)
             output_tokens = int(getattr(usage_obj, "output_tokens", 0) or 0)
+            status = getattr(r, "status", None)
+            if status == "incomplete":
+                details = getattr(r, "incomplete_details", None)
+                status = getattr(details, "reason", None) or status
             return ProviderResponse(
                 provider=provider,
                 model=model,
                 text=r.output_text,
                 usage=Usage(input_tokens, output_tokens),
                 latency_ms=int((time.perf_counter() - started) * 1000),
-                stop_reason=getattr(r, "status", None),
+                stop_reason=status,
                 request_id=getattr(r, "id", None),
             )
 

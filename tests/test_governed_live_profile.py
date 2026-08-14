@@ -135,7 +135,7 @@ def test_semantic_failure_becomes_repair_without_artifact_mutation(tmp_path):
     assert (root / contract.deliverables[0].path).is_file()
 
 
-def test_malformed_composer_response_requires_recovery_and_writes_nothing(tmp_path):
+def test_malformed_composer_response_is_known_failure_and_writes_nothing(tmp_path):
     composer, _reviewer = routes()
     malformed = FixtureReply(
         provider=composer.provider,
@@ -148,10 +148,13 @@ def test_malformed_composer_response_requires_recovery_and_writes_nothing(tmp_pa
         tmp_path, (malformed,)
     )
 
-    assert result.status == ProjectRunStatus.RECOVERY_REQUIRED
-    assert result.stop_reason == "ambiguous-dispatch"
+    assert result.status == ProjectRunStatus.FAILED
+    assert result.stop_reason == "task-failed"
     assert client.call_count == 1
     assert not (root / contract.deliverables[0].path).exists()
     with ledger.connect() as con:
-        call = con.execute("SELECT status FROM provider_calls").fetchone()
+        call = con.execute(
+            "SELECT status,failure_kind FROM provider_calls"
+        ).fetchone()
     assert call["status"] == "failed"
+    assert call["failure_kind"] == "response-schema"

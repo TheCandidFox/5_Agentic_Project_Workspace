@@ -128,7 +128,9 @@ _POLICY_KEYS = {
     "max no progress": "max_no_progress",
     "max runtime seconds": "max_runtime_seconds",
 }
-_SUPPORTED_PROFILES = frozenset({"offline-checklist-v1", "governed-live-v1"})
+_SUPPORTED_PROFILES = frozenset(
+    {"offline-checklist-v1", "governed-live-v1", "governed-live-v2"}
+)
 _LIVE_REQUIRED_CRITERIA = frozenset({"deliverable-exists", "required-sections"})
 _LIVE_REQUIRED_CONSTRAINTS = frozenset(
     {
@@ -433,38 +435,39 @@ def parse_project_contract(
     )
     policy = _execution_policy(sections.get("execution policy", []))
 
-    if policy.profile == "governed-live-v1":
+    if policy.profile in {"governed-live-v1", "governed-live-v2"}:
+        live_profile = policy.profile
         if policy.authority_ceiling != AuthorityLevel.LIVE_NETWORK:
             raise ProjectContractError(
-                "governed-live-v1 requires the live-network authority ceiling"
+                f"{live_profile} requires the live-network authority ceiling"
             )
         if not 0 < policy.budget_usd <= 5:
             raise ProjectContractError(
-                "governed-live-v1 requires Budget USD greater than 0 and at most 5"
+                f"{live_profile} requires Budget USD greater than 0 and at most 5"
             )
         if len(deliverables) != 1:
             raise ProjectContractError(
-                "governed-live-v1 requires exactly one Markdown deliverable"
+                f"{live_profile} requires exactly one Markdown deliverable"
             )
         if policy.max_tasks > 4:
-            raise ProjectContractError("governed-live-v1 permits at most 4 tasks")
+            raise ProjectContractError(f"{live_profile} permits at most 4 tasks")
         if policy.max_iterations > 8:
             raise ProjectContractError(
-                "governed-live-v1 permits at most 8 scheduler iterations"
+                f"{live_profile} permits at most 8 scheduler iterations"
             )
         if policy.max_no_progress > 2:
             raise ProjectContractError(
-                "governed-live-v1 permits at most 2 no-progress results"
+                f"{live_profile} permits at most 2 no-progress results"
             )
         if policy.max_runtime_seconds > 600:
             raise ProjectContractError(
-                "governed-live-v1 permits at most 600 runtime seconds"
+                f"{live_profile} permits at most 600 runtime seconds"
             )
         criterion_keys = {item.criterion_key for item in criteria}
         missing_criteria = sorted(_LIVE_REQUIRED_CRITERIA.difference(criterion_keys))
         if missing_criteria:
             raise ProjectContractError(
-                "governed-live-v1 is missing required criteria: "
+                f"{live_profile} is missing required criteria: "
                 + ", ".join(missing_criteria)
             )
         constraint_keys = {item.constraint_key for item in constraints}
@@ -473,7 +476,7 @@ def parse_project_contract(
         )
         if missing_constraints:
             raise ProjectContractError(
-                "governed-live-v1 is missing required constraints: "
+                f"{live_profile} is missing required constraints: "
                 + ", ".join(missing_constraints)
             )
 

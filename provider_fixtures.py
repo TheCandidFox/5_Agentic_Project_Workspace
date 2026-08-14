@@ -17,6 +17,8 @@ class FixtureReply:
     text: str
     input_tokens: int
     output_tokens: int
+    stop_reason: str = "fixture-complete"
+    latency_ms: int = 7
 
 
 class ScriptedProviderClient:
@@ -50,8 +52,8 @@ class ScriptedProviderClient:
             model=model,
             text=reply.text,
             usage=Usage(reply.input_tokens, reply.output_tokens),
-            latency_ms=7,
-            stop_reason="fixture-complete",
+            latency_ms=reply.latency_ms,
+            stop_reason=reply.stop_reason,
             request_id=f"fixture-request-{self.call_count}",
         )
 
@@ -141,3 +143,38 @@ def passing_phase8_replies(
             output_tokens=310,
         ),
     )
+
+
+def recovering_phase9_replies(
+    contract: ProjectContract,
+    *,
+    composer_provider: str,
+    composer_model: str,
+    reviewer_provider: str,
+    reviewer_model: str,
+    reviewer_max_output_tokens: int,
+) -> tuple[FixtureReply, FixtureReply, FixtureReply]:
+    """Reproduce the Phase 8 max-token failure, then return a valid review."""
+
+    compose, review = passing_phase8_replies(
+        contract,
+        composer_provider=composer_provider,
+        composer_model=composer_model,
+        reviewer_provider=reviewer_provider,
+        reviewer_model=reviewer_model,
+    )
+    truncated = FixtureReply(
+        provider=reviewer_provider,
+        model=reviewer_model,
+        text=(
+            '{"criteria":[{"criterion_key":"deliverable-exists",'
+            '"verdict":"PASS","rationale":"The artifact exists"}'
+        ),
+        input_tokens=6_759,
+        # Preserve the observed Phase 8 failure (3,000 billed output tokens)
+        # even though Phase 9 authorizes a larger 5,000-token retry window.
+        output_tokens=min(3_000, reviewer_max_output_tokens),
+        stop_reason="max_tokens",
+        latency_ms=30_050,
+    )
+    return compose, truncated, review

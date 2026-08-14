@@ -162,3 +162,21 @@ def test_governed_live_profile_requires_positive_budget_authority_and_controls()
                 "",
             )
         )
+
+
+def test_governed_live_v2_preserves_live_bounds_and_recovery_capacity():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "project"
+        / "phase9_recovery_canary_goal.md"
+    ).read_text(encoding="utf-8")
+    contract = parse_project_contract(source, source_path="project/phase9.md")
+
+    assert contract.policy.profile == "governed-live-v2"
+    assert contract.policy.authority_ceiling == AuthorityLevel.LIVE_NETWORK
+    assert contract.policy.max_tasks == 2
+    assert contract.policy.max_iterations == 4
+    assert contract.policy.max_no_progress == 2
+
+    with pytest.raises(ProjectContractError, match="at most 2 no-progress"):
+        parse_project_contract(source.replace("Max no progress: `2`", "Max no progress: `3`"))

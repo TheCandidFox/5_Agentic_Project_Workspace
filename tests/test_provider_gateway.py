@@ -13,6 +13,7 @@ from provider_fixtures import FixtureReply, ScriptedProviderClient
 from provider_gateway import (
     AmbiguousProviderCall,
     GovernedProviderGateway,
+    ProviderCallFailed,
     ProviderAuthorizationError,
     ProviderExecutionMode,
     ProviderResponseError,
@@ -170,15 +171,80 @@ def test_schema_failure_is_durable_and_never_silently_recalled(tmp_path):
             else (_ for _ in ()).throw(ValueError("schema mismatch"))
         ),
     )
-    with pytest.raises(ValueError, match="schema mismatch"):
+    with pytest.raises(ProviderCallFailed, match="schema mismatch") as captured:
         gateway.call_json(**kwargs)
+    assert captured.value.failure_kind == "response-schema"
+    assert captured.value.retryable is False
     with pytest.raises(AmbiguousProviderCall, match="will not be repeated"):
         gateway.call_json(**kwargs)
     assert client.call_count == 1
     with ledger.connect() as con:
-        row = con.execute("SELECT status,error FROM provider_calls").fetchone()
+        row = con.execute(
+            "SELECT status,error,failure_kind,response_excerpt FROM provider_calls"
+        ).fetchone()
     assert row["status"] == "failed"
     assert "schema mismatch" in row["error"]
+    assert row["failure_kind"] == "response-schema"
+    assert row["response_excerpt"] == '{"unexpected":true}'
+
+
+def test_max_token_response_is_retryable_and_excerpt_is_redacted(tmp_path):
+    ledger, contract, task, selected = claimed_task(tmp_path)
+    client = ScriptedProviderClient(
+        (
+            FixtureReply(
+                provider=selected.provider,
+                model=selected.model,
+                text=(
+                    '{"note":"api_key=sk-abcdefghijklmnopqrst",'
+                    '"criteria":['
+                ),
+                input_tokens=250,
+                output_tokens=selected.max_output_tokens,
+                stop_reason="max_tokens",
+            ),
+        )
+    )
+    gateway = GovernedProviderGateway(
+        ledger=ledger,
+        client=client,
+        execution_mode=ProviderExecutionMode.OFFLINE_SIMULATION,
+        approved_routes=(selected,),
+        daily_limit_usd=5,
+        monthly_limit_usd=150,
+    )
+
+    with pytest.raises(ProviderCallFailed) as captured:
+        gateway.call_json(
+            run_id="gateway-test-run",
+            task_key=task.task_key,
+            attempt_number=1,
+            route=selected,
+            prompt="bounded prompt",
+            prompt_template_version="phase9-test-v1",
+            response_schema="phase9-test-v1",
+            max_call_cost_usd=task.estimated_cost_usd,
+            project_budget_usd=contract.policy.budget_usd,
+            parser=lambda value: value,
+        )
+
+    assert captured.value.failure_kind == "response-truncated"
+    assert captured.value.retryable is True
+    with ledger.connect() as con:
+        row = con.execute(
+            """
+            SELECT status,failure_kind,response_excerpt,response_excerpt_sha256,
+                   output_tokens,stop_reason
+            FROM provider_calls
+            """
+        ).fetchone()
+    assert row["status"] == "failed"
+    assert row["failure_kind"] == "response-truncated"
+    assert row["output_tokens"] == selected.max_output_tokens
+    assert row["stop_reason"] == "max_tokens"
+    assert "sk-abcdefghijklmnopqrst" not in row["response_excerpt"]
+    assert "[REDACTED]" in row["response_excerpt"]
+    assert row["response_excerpt_sha256"]
 
 
 def test_route_drift_and_budget_denial_happen_before_fixture_dispatch(tmp_path):

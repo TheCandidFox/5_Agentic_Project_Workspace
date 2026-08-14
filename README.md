@@ -21,6 +21,10 @@ governance. Phase 7 adds the first durable Markdown-contract runner using a
 deterministic zero-cost checklist profile. Phase 8 adds an opt-in, fingerprint-
 approved provider profile with strict response schemas, durable call
 provenance, dual budget gates, and an offline simulated canary.
+Phase 9 classifies known provider failures, performs one policy-bounded reviewer
+retry, accounts for failed-but-billable attempts, emits redacted diagnostics
+and five-segment progress, and proves restart/resume without redispatching the
+accepted composer artifact.
 
 ## What is preserved
 
@@ -365,3 +369,40 @@ without silently overwriting or redispatching the artifact. Repair and
 multi-iteration quality hardening are Phase 9 feedback targets. See
 `docs/implementation/PHASE_8_GOVERNED_PROVIDERS.md` and
 `docs/planning/PHASE_8_IMPLEMENTATION_AND_ACCEPTANCE_CONTRACT.md`.
+
+## Phase 9: bounded recovery and operator observability
+
+Phase 9 adds:
+
+- `recovery_live_profile.py` — `governed-live-v2`, retaining the fixed
+  composer/reviewer DAG while allowing exactly one reviewer-only retry;
+- classified, measured provider failures in `provider_gateway.py`, including
+  the Phase 8 `response-truncated` case;
+- migration `0008_recovery_observability` for bounded redacted failure excerpts
+  and explicit failure kinds;
+- controlled pause/resume in `orchestration_kernel.py`, with nonterminal-
+  dispatch checks and no composer redispatch;
+- `run_diagnostics.py` — a redacted run bundle covering the project, tasks,
+  dispatches, calls, artifacts, acceptance, events, cost, and next actions;
+- `run_phase9.py` — status, exact offline recovery canary, live preparation,
+  and fingerprint-approved live modes with a five-segment status view.
+
+Run the complete zero-cost recovery proof with:
+
+```powershell
+python run_phase9.py --status-only
+python run_phase9.py --recovery-canary
+python run_phase9.py --recovery-canary
+```
+
+The first recovery canary composes once, simulates the observed 3,000-token
+review truncation, retries only the reviewer, reaches acceptance `PASS`, and
+writes a diagnostic bundle. The second invocation replays the completed run
+with zero new calls and no artifact rewrite. These commands use only explicit
+in-memory fixtures and make no network request.
+
+Live mode remains separately fingerprint-gated. Phase 9 does not yet implement
+arbitrary dynamic decomposition, multi-agent collaboration profiles, automatic
+goal interviews, multi-judge consensus, live research, or a remote dashboard.
+Those requested capabilities are recorded as future milestones in
+`docs/planning/PHASE_9_IMPLEMENTATION_AND_ACCEPTANCE_CONTRACT.md`.

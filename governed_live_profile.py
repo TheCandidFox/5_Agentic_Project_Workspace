@@ -15,7 +15,12 @@ from orchestration_kernel import (
     TaskExecutionResult,
 )
 from project_contract import AuthorityLevel, ProjectContract, ProjectContractError
-from provider_gateway import GovernedCallResult, GovernedProviderGateway, ProviderRoute
+from provider_gateway import (
+    GovernedCallResult,
+    GovernedProviderGateway,
+    ProviderCallFailed,
+    ProviderRoute,
+)
 from task_graph import TaskSpec
 
 
@@ -63,6 +68,13 @@ def _bounded_string_list(name: str, value: Any) -> list[str]:
 class GovernedLivePlanner:
     profile = "governed-live-v1"
     supported_kinds = frozenset({"compose-markdown", "review-markdown"})
+    compose_allocation_ratio = 0.60
+    compose_max_attempts = 1
+    reviewer_max_attempts = 1
+    compose_template_version = "phase8-compose-v1"
+    compose_response_schema = "phase8-compose-v1"
+    review_template_version = "phase8-review-v1"
+    review_response_schema = "phase8-review-v1"
 
     def __init__(self, *, composer_route: ProviderRoute, reviewer_route: ProviderRoute):
         self.composer_route = composer_route
@@ -83,15 +95,15 @@ class GovernedLivePlanner:
             )
         if contract.policy.authority_ceiling != AuthorityLevel.LIVE_NETWORK:
             raise ProjectContractError(
-                "governed-live-v1 requires live-network authority"
+                f"{self.profile} requires live-network authority"
             )
         if not 0 < contract.policy.budget_usd <= 5:
             raise ProjectContractError(
-                "governed-live-v1 requires a positive budget no greater than $5"
+                f"{self.profile} requires a positive budget no greater than $5"
             )
         if len(contract.deliverables) != 1:
             raise ProjectContractError(
-                "governed-live-v1 requires exactly one deliverable"
+                f"{self.profile} requires exactly one deliverable"
             )
         criteria = {item.criterion_key for item in contract.acceptance_criteria}
         constraints = {item.constraint_key for item in contract.constraints}
@@ -100,7 +112,9 @@ class GovernedLivePlanner:
         if not _MANDATORY_CONSTRAINTS.issubset(constraints):
             raise ProjectContractError("governed live contract lacks mandatory constraints")
 
-        compose_allocation = round(contract.policy.budget_usd * 0.60, 10)
+        compose_allocation = round(
+            contract.policy.budget_usd * self.compose_allocation_ratio, 10
+        )
         review_allocation = round(contract.policy.budget_usd - compose_allocation, 10)
         if compose_allocation <= 0 or review_allocation <= 0:
             raise ProjectContractError("governed live budget cannot fund both bounded calls")
@@ -122,12 +136,12 @@ class GovernedLivePlanner:
                 kind="compose-markdown",
                 authority=AuthorityLevel.LIVE_NETWORK,
                 estimated_cost_usd=compose_allocation,
-                max_attempts=1,
+                max_attempts=self.compose_max_attempts,
                 inputs={
                     **common,
                     "route": self._route_payload(self.composer_route),
-                    "prompt_template_version": "phase8-compose-v1",
-                    "response_schema": "phase8-compose-v1",
+                    "prompt_template_version": self.compose_template_version,
+                    "response_schema": self.compose_response_schema,
                 },
             ),
             TaskSpec(
@@ -141,18 +155,23 @@ class GovernedLivePlanner:
                 authority=AuthorityLevel.LIVE_NETWORK,
                 dependencies=("compose-markdown",),
                 estimated_cost_usd=review_allocation,
-                max_attempts=1,
+                max_attempts=self.reviewer_max_attempts,
                 inputs={
                     **common,
                     "route": self._route_payload(self.reviewer_route),
-                    "prompt_template_version": "phase8-review-v1",
-                    "response_schema": "phase8-review-v1",
+                    "prompt_template_version": self.review_template_version,
+                    "response_schema": self.review_response_schema,
                 },
             ),
         )
 
 
 class GovernedLiveExecutor:
+    compose_template_version = "phase8-compose-v1"
+    compose_response_schema = "phase8-compose-v1"
+    review_template_version = "phase8-review-v1"
+    review_response_schema = "phase8-review-v1"
+
     def __init__(
         self,
         *,
@@ -364,11 +383,38 @@ class GovernedLiveExecutor:
     def execute(self, context: TaskExecutionContext) -> TaskExecutionResult:
         self.call_count += 1
         self.dispatched_task_keys.append(context.task.task_key)
-        if context.task.kind == "compose-markdown":
-            return self._compose(context)
-        if context.task.kind == "review-markdown":
-            return self._review(context)
-        raise ValueError(f"unsupported governed live task: {context.task.kind}")
+        try:
+            if context.task.kind == "compose-markdown":
+                return self._compose(context)
+            if context.task.kind == "review-markdown":
+                return self._review(context)
+            raise ValueError(f"unsupported governed live task: {context.task.kind}")
+        except ProviderCallFailed as exc:
+            return TaskExecutionResult(
+                success=False,
+                summary=(
+                    f"Known provider failure {exc.failure_kind}: {exc}. "
+                    "The billable attempt was recorded and is eligible for "
+                    "bounded retry only when both task and project policy permit it."
+                ),
+                evidence=(
+                    TaskEvidence(
+                        evidence_key=(
+                            f"provider-failure-{context.task.task_key}-"
+                            f"attempt-{context.attempt_number}"
+                        ),
+                        kind=EvidenceKind.OBSERVATION,
+                        disposition=EvidenceDisposition.NEUTRAL,
+                        summary=(
+                            f"Provider attempt ended with known failure "
+                            f"{exc.failure_kind}."
+                        ),
+                        reference=f"provider-call:{exc.provider_call_id}",
+                    ),
+                ),
+                actual_cost_usd=exc.actual_cost_usd,
+                retryable=exc.retryable,
+            )
 
     def _compose(self, context: TaskExecutionContext) -> TaskExecutionResult:
         prompt = self.compose_prompt(context.contract)
@@ -378,8 +424,8 @@ class GovernedLiveExecutor:
             attempt_number=context.attempt_number,
             route=self.composer_route,
             prompt=prompt,
-            prompt_template_version="phase8-compose-v1",
-            response_schema="phase8-compose-v1",
+            prompt_template_version=self.compose_template_version,
+            response_schema=self.compose_response_schema,
             max_call_cost_usd=context.task.estimated_cost_usd,
             project_budget_usd=context.contract.policy.budget_usd,
             parser=lambda payload: self._parse_compose(payload, context.contract),
@@ -436,8 +482,8 @@ class GovernedLiveExecutor:
             attempt_number=context.attempt_number,
             route=self.reviewer_route,
             prompt=self.review_prompt(context.contract, content),
-            prompt_template_version="phase8-review-v1",
-            response_schema="phase8-review-v1",
+            prompt_template_version=self.review_template_version,
+            response_schema=self.review_response_schema,
             max_call_cost_usd=context.task.estimated_cost_usd,
             project_budget_usd=context.contract.policy.budget_usd,
             parser=lambda payload: self._parse_review(payload, context.contract),

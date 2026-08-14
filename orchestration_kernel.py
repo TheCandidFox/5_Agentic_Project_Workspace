@@ -291,6 +291,7 @@ class KernelPolicy:
         )
     )
     allow_positive_cost: bool = False
+    pause_after_retryable_failure: bool = False
 
 
 @dataclass(frozen=True)
@@ -526,6 +527,59 @@ class OrchestrationStore:
         record["policy"] = json.loads(record.pop("policy_json"))
         return record
 
+    def resume_retryable_pause(
+        self,
+        run_id: str,
+        *,
+        max_runtime_seconds: int,
+    ) -> dict[str, Any]:
+        now = utc_now()
+        deadline = (
+            datetime.now(timezone.utc)
+            + timedelta(seconds=max_runtime_seconds)
+        ).isoformat()
+        with self.ledger.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            row = con.execute(
+                "SELECT status,stop_reason FROM project_runs WHERE run_id=?",
+                (run_id,),
+            ).fetchone()
+            if row is None:
+                raise KeyError(f"unknown project run: {run_id}")
+            if (
+                row["status"] != ProjectRunStatus.PAUSED.value
+                or row["stop_reason"] != "retryable-failure-paused"
+            ):
+                raise ProjectOrchestrationError(
+                    "only a controlled retryable-failure pause may resume"
+                )
+            ambiguous = con.execute(
+                """
+                SELECT COUNT(*) FROM task_dispatches
+                WHERE run_id=? AND status='dispatching'
+                """,
+                (run_id,),
+            ).fetchone()[0]
+            if int(ambiguous) != 0:
+                raise AmbiguousTaskDispatch(
+                    "paused run has a non-terminal dispatch and cannot resume"
+                )
+            con.execute(
+                """
+                UPDATE project_runs
+                SET status='running',stop_reason=NULL,error=NULL,completed_at=NULL,
+                    deadline_at=?,updated_at=?
+                WHERE run_id=?
+                """,
+                (deadline, now, run_id),
+            )
+        self.ledger.event(
+            "project_run_resumed",
+            {"run_id": run_id, "reason": "retryable-failure-paused"},
+            run_id,
+        )
+        return self.get_run(run_id)
+
     def task_records(self, run_id: str) -> list[dict[str, Any]]:
         with self.ledger.connect() as con:
             rows = con.execute(
@@ -682,14 +736,15 @@ class OrchestrationStore:
             con.execute(
                 """
                 UPDATE task_dispatches
-                SET status=?, result_json=?, actual_cost_usd=?, completed_at=?,
-                    updated_at=?
+                SET status=?, result_json=?, actual_cost_usd=?, error=?,
+                    completed_at=?, updated_at=?
                 WHERE dispatch_id=?
                 """,
                 (
                     "succeeded" if result.success else "failed",
                     _json(payload),
                     result.actual_cost_usd,
+                    None if result.success else result.summary[:4_000],
                     now,
                     now,
                     dispatch_id,
@@ -1059,6 +1114,7 @@ class OrchestrationKernel:
         *,
         run_id: str | None = None,
         idempotency_key: str | None = None,
+        resume_paused: bool = False,
     ) -> ProjectRunResult:
         if contract.policy.profile != self.planner.profile:
             raise ProjectOrchestrationError(
@@ -1085,7 +1141,17 @@ class OrchestrationKernel:
             request_sha256=request_sha256,
         )
         if not claimed and record["status"] in TERMINAL_PROJECT_STATES:
-            return self.store.result(selected_run_id, replayed=True)
+            if (
+                resume_paused
+                and record["status"] == ProjectRunStatus.PAUSED.value
+                and record["stop_reason"] == "retryable-failure-paused"
+            ):
+                record = self.store.resume_retryable_pause(
+                    selected_run_id,
+                    max_runtime_seconds=contract.policy.max_runtime_seconds,
+                )
+            else:
+                return self.store.result(selected_run_id, replayed=True)
 
         ambiguous = self.store.ambiguous_dispatches(selected_run_id)
         if ambiguous:
@@ -1256,6 +1322,19 @@ class OrchestrationKernel:
                     dispatch_id=dispatch_id,
                     result=result,
                 )
+                if (
+                    not result.success
+                    and result.retryable
+                    and self.policy.pause_after_retryable_failure
+                    and attempt < task.max_attempts
+                ):
+                    self.store.finish_run(
+                        selected_run_id,
+                        status=ProjectRunStatus.PAUSED,
+                        outcome=None,
+                        stop_reason="retryable-failure-paused",
+                    )
+                    return self.store.result(selected_run_id, replayed=False)
             except Exception as exc:
                 self.store.finish_run(
                     selected_run_id,
