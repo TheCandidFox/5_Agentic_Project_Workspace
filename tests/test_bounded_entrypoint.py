@@ -51,6 +51,7 @@ def test_bounded_status_applies_additive_schema_without_agent_dispatch(tmp_path)
         "0003_bounded_autonomy",
         "0004_research_provenance",
         "0005_acceptance_truth",
+        "0006_project_orchestration",
     )
 
 

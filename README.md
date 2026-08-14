@@ -16,7 +16,9 @@ provides guarded local command execution; Phase 2 adds normalized durable
 validation; Phases 3 and 4 add controlled patches, Git checkpoints, and
 rollback; Phase 5 adds the bounded repair state machine. Live repair-provider
 integration remains deliberately disabled pending explicit provider and budget
-approval.
+approval. Phase 6 adds offline research provenance and acceptance/truth
+governance. Phase 7 adds the first durable Markdown-contract runner using a
+deterministic zero-cost checklist profile.
 
 ## What is preserved
 
@@ -287,8 +289,42 @@ calibration, and exactly ten final bootstrap gates.
 
 Neither mode constructs a provider client or performs a network request. A
 passing result completes the execution/research/acceptance bootstrap; Markdown
-project-contract parsing and general backlog orchestration remain the next
-phase.
+project-contract parsing and the first bounded backlog orchestration layer are
+implemented in Phase 7 below.
 
 See `docs/implementation/PHASE_6_FINAL_BOOTSTRAP.md`,
 `PHASE_6_INSTALLATION.md`, and `PHASE_6_CHANGELOG.md`.
+
+## Phase 7: Markdown project orchestration
+
+Phase 7 adds:
+
+- `project_contract.py` — a strict, portable Markdown project-contract parser;
+- `task_graph.py` — bounded DAG validation and deterministic ready-task order;
+- `orchestration_kernel.py` — durable task claims, resume/replay, authority,
+  cost, deadline, no-progress, and ambiguous-dispatch stopping rules;
+- `offline_checklist_profile.py` — the explicit `offline-checklist-v1` fixture
+  planner/executor;
+- migration `0006_project_orchestration` for project runs, backlog tasks,
+  dependencies, dispatches, and artifacts;
+- `run_phase7.py` — the first end-to-end Markdown-goal entry point.
+
+Run the default synthetic contract with:
+
+```powershell
+python run_phase7.py --status-only
+python run_phase7.py
+```
+
+The default contract is `project/phase7_sample_goal.md`. A first full run creates
+`outputs/phase7_supplier_evaluation_checklist.md`, validates it, submits the
+evidence to the Phase 6 acceptance engine, and completes only on `PASS`. The
+same command immediately verifies completed replay without another task
+dispatch. Status-only mode writes no artifact.
+
+This profile is a deterministic checklist generator, not an arbitrary semantic
+planner. It makes no provider or network call and permits no positive-cost task.
+Later phases can add reviewed planner/executor adapters behind the same durable
+and policy-controlled interfaces. See
+`docs/implementation/PHASE_7_ORCHESTRATION.md` and
+`docs/planning/PHASE_7_IMPLEMENTATION_AND_ACCEPTANCE_CONTRACT.md`.

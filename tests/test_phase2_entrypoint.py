@@ -82,6 +82,7 @@ def test_entrypoint_runs_offline_suite_and_replays_unchanged_source(tmp_path):
         "0003_bounded_autonomy",
         "0004_research_provenance",
         "0005_acceptance_truth",
+        "0006_project_orchestration",
     )
     assert second.newly_applied_migrations == ()
     assert all(result.replayed for result in second.suite.results)

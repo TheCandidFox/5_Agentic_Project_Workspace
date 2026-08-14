@@ -359,6 +359,122 @@ SCHEMA_MIGRATIONS: tuple[tuple[str, str], ...] = (
         ON acceptance_constraints(evaluation_id);
         """,
     ),
+    (
+        "0006_project_orchestration",
+        """
+        CREATE TABLE IF NOT EXISTS project_runs (
+            run_id TEXT PRIMARY KEY,
+            contract_id TEXT NOT NULL,
+            contract_path TEXT NOT NULL,
+            contract_sha256 TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            request_sha256 TEXT NOT NULL,
+            graph_sha256 TEXT NOT NULL,
+            profile TEXT NOT NULL,
+            policy_json TEXT NOT NULL,
+            status TEXT NOT NULL,
+            outcome TEXT,
+            acceptance_evaluation_id TEXT,
+            task_count INTEGER NOT NULL,
+            completed_task_count INTEGER NOT NULL DEFAULT 0,
+            iteration_count INTEGER NOT NULL DEFAULT 0,
+            no_progress_count INTEGER NOT NULL DEFAULT 0,
+            cost_usd REAL NOT NULL DEFAULT 0,
+            stop_reason TEXT,
+            error TEXT,
+            started_at TEXT NOT NULL,
+            deadline_at TEXT NOT NULL,
+            completed_at TEXT,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY(acceptance_evaluation_id)
+                REFERENCES acceptance_runs(evaluation_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_project_runs_contract_started
+        ON project_runs(contract_id, started_at);
+
+        CREATE TABLE IF NOT EXISTS backlog_tasks (
+            task_record_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            task_key TEXT NOT NULL,
+            ordinal INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            authority TEXT NOT NULL,
+            estimated_cost_usd REAL NOT NULL,
+            max_attempts INTEGER NOT NULL,
+            inputs_json TEXT NOT NULL,
+            status TEXT NOT NULL,
+            attempt_count INTEGER NOT NULL DEFAULT 0,
+            result_json TEXT,
+            actual_cost_usd REAL NOT NULL DEFAULT 0,
+            error TEXT,
+            started_at TEXT,
+            completed_at TEXT,
+            updated_at TEXT NOT NULL,
+            UNIQUE(run_id, task_key),
+            UNIQUE(run_id, ordinal),
+            FOREIGN KEY(run_id) REFERENCES project_runs(run_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_backlog_tasks_run_ordinal
+        ON backlog_tasks(run_id, ordinal);
+
+        CREATE TABLE IF NOT EXISTS backlog_dependencies (
+            run_id TEXT NOT NULL,
+            task_key TEXT NOT NULL,
+            depends_on_task_key TEXT NOT NULL,
+            PRIMARY KEY(run_id, task_key, depends_on_task_key),
+            FOREIGN KEY(run_id, task_key)
+                REFERENCES backlog_tasks(run_id, task_key),
+            FOREIGN KEY(run_id, depends_on_task_key)
+                REFERENCES backlog_tasks(run_id, task_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_backlog_dependencies_parent
+        ON backlog_dependencies(run_id, depends_on_task_key);
+
+        CREATE TABLE IF NOT EXISTS task_dispatches (
+            dispatch_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            task_key TEXT NOT NULL,
+            attempt_number INTEGER NOT NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            request_sha256 TEXT NOT NULL,
+            status TEXT NOT NULL,
+            result_json TEXT,
+            actual_cost_usd REAL,
+            error TEXT,
+            started_at TEXT NOT NULL,
+            completed_at TEXT,
+            updated_at TEXT NOT NULL,
+            UNIQUE(run_id, task_key, attempt_number),
+            FOREIGN KEY(run_id, task_key)
+                REFERENCES backlog_tasks(run_id, task_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_task_dispatches_run_task
+        ON task_dispatches(run_id, task_key, attempt_number);
+
+        CREATE TABLE IF NOT EXISTS project_artifacts (
+            artifact_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            task_key TEXT NOT NULL,
+            path TEXT NOT NULL,
+            content_sha256 TEXT NOT NULL,
+            content_bytes INTEGER NOT NULL,
+            media_type TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(run_id, path),
+            FOREIGN KEY(run_id, task_key)
+                REFERENCES backlog_tasks(run_id, task_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_project_artifacts_run_task
+        ON project_artifacts(run_id, task_key);
+        """,
+    ),
 )
 
 
