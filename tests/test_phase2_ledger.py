@@ -41,6 +41,7 @@ def test_additive_migration_applies_once_and_preserves_existing_events(tmp_path)
         "0006_project_orchestration",
         "0007_governed_provider_calls",
         "0008_recovery_observability",
+        "0009_bounded_revision_cycle",
     )
     assert first.schema_migration_ids() == first.applied_schema_migrations
 
@@ -56,6 +57,7 @@ def test_additive_migration_applies_once_and_preserves_existing_events(tmp_path)
         "0006_project_orchestration",
         "0007_governed_provider_calls",
         "0008_recovery_observability",
+        "0009_bounded_revision_cycle",
     )
     assert reopened.integrity_check() == "ok"
     with reopened.connect() as con:
@@ -124,7 +126,7 @@ def test_concurrent_ledger_initialization_records_migration_once(tmp_path):
         results = list(executor.map(initialize, (1, 2)))
 
     applied_counts = [len(applied) for applied, _ in results]
-    assert sorted(applied_counts) == [0, 8]
+    assert sorted(applied_counts) == [0, 9]
     assert all(
         migration_ids
         == (
@@ -136,6 +138,7 @@ def test_concurrent_ledger_initialization_records_migration_once(tmp_path):
             "0006_project_orchestration",
             "0007_governed_provider_calls",
             "0008_recovery_observability",
+            "0009_bounded_revision_cycle",
         )
         for _, migration_ids in results
     )

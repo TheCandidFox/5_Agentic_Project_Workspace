@@ -137,6 +137,7 @@ def test_status_reports_migration_six_once(tmp_path):
         "0006_project_orchestration",
         "0007_governed_provider_calls",
         "0008_recovery_observability",
+        "0009_bounded_revision_cycle",
     )
     assert second.newly_applied_migrations == ()
     assert first.integrity == second.integrity == "ok"

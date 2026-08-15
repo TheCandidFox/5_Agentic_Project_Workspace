@@ -529,6 +529,169 @@ SCHEMA_MIGRATIONS: tuple[tuple[str, str], ...] = (
         ON provider_calls(failure_kind, status);
         """,
     ),
+    (
+        "0009_bounded_revision_cycle",
+        """
+        CREATE TABLE IF NOT EXISTS revision_runs (
+            run_id TEXT PRIMARY KEY,
+            contract_sha256 TEXT NOT NULL,
+            overall_goal TEXT NOT NULL,
+            logical_path TEXT NOT NULL,
+            state TEXT NOT NULL CHECK(state IN (
+                'INTAKE_VALIDATED','BASELINE_PRESERVED','REVIEW_CLAIMED',
+                'REVIEW_RECORDED','REVISION_PLANNED','REVISION_CLAIMED',
+                'CANDIDATE_PRESERVED','CANDIDATE_VALIDATED',
+                'COMPARISON_RECORDED','ACCEPTED','HUMAN_DECISION_REQUIRED',
+                'RECOVERY_REQUIRED','BOUNDED_STOP','CANCELLED')),
+            accepted_version_id TEXT,
+            baseline_version_id TEXT,
+            candidate_version_id TEXT,
+            policy_json TEXT NOT NULL,
+            spent_cost_usd REAL NOT NULL DEFAULT 0 CHECK(spent_cost_usd >= 0),
+            reserved_cost_usd REAL NOT NULL DEFAULT 0 CHECK(reserved_cost_usd >= 0),
+            revision_count INTEGER NOT NULL DEFAULT 0 CHECK(revision_count >= 0),
+            no_progress_count INTEGER NOT NULL DEFAULT 0 CHECK(no_progress_count >= 0),
+            stop_reason TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS artifact_versions (
+            version_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            logical_path TEXT NOT NULL,
+            parent_version_id TEXT,
+            content_bytes BLOB NOT NULL,
+            content_sha256 TEXT NOT NULL,
+            byte_count INTEGER NOT NULL CHECK(byte_count >= 0),
+            media_type TEXT NOT NULL CHECK(media_type = 'text/markdown'),
+            source_task TEXT NOT NULL,
+            source_attempt INTEGER NOT NULL CHECK(source_attempt >= 0),
+            status TEXT NOT NULL CHECK(status IN ('candidate','accepted','rejected','superseded')),
+            created_at TEXT NOT NULL,
+            accepted_at TEXT,
+            superseded_at TEXT,
+            UNIQUE(run_id, logical_path, content_sha256),
+            FOREIGN KEY(run_id) REFERENCES revision_runs(run_id),
+            FOREIGN KEY(parent_version_id) REFERENCES artifact_versions(version_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS review_findings (
+            finding_id TEXT PRIMARY KEY,
+            schema_version TEXT NOT NULL CHECK(schema_version = 'phase10-review-v1'),
+            run_id TEXT NOT NULL,
+            evaluation_id TEXT NOT NULL,
+            version_id TEXT NOT NULL,
+            criterion_key TEXT NOT NULL,
+            verdict TEXT NOT NULL CHECK(verdict IN ('PASS','REPAIR','BLOCK','HUMAN_DECISION')),
+            severity TEXT NOT NULL CHECK(severity IN ('none','low','medium','high','critical')),
+            fingerprint TEXT NOT NULL,
+            evidence_json TEXT NOT NULL,
+            observed TEXT NOT NULL,
+            expected TEXT NOT NULL,
+            proposed_action TEXT NOT NULL,
+            repair_eligibility TEXT NOT NULL CHECK(repair_eligibility IN ('eligible','ineligible','not-applicable')),
+            human_decision_reason TEXT,
+            source_role TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('open','targeted','resolved','superseded','human_pending')),
+            supersedes_finding_id TEXT,
+            created_at TEXT NOT NULL,
+            resolved_at TEXT,
+            superseded_at TEXT,
+            UNIQUE(run_id, evaluation_id, criterion_key),
+            FOREIGN KEY(run_id) REFERENCES revision_runs(run_id),
+            FOREIGN KEY(version_id) REFERENCES artifact_versions(version_id),
+            FOREIGN KEY(supersedes_finding_id) REFERENCES review_findings(finding_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS revision_attempts (
+            revision_attempt_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            ordinal INTEGER NOT NULL CHECK(ordinal > 0),
+            idempotency_key TEXT NOT NULL UNIQUE,
+            baseline_version_id TEXT NOT NULL,
+            candidate_version_id TEXT,
+            target_finding_set_sha256 TEXT NOT NULL,
+            normalized_plan_sha256 TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('planned','claimed','candidate-preserved','validated','completed','failed','ambiguous')),
+            terminal_reason TEXT,
+            quoted_cost_usd REAL NOT NULL DEFAULT 0 CHECK(quoted_cost_usd >= 0),
+            reserved_cost_usd REAL NOT NULL DEFAULT 0 CHECK(reserved_cost_usd >= 0),
+            actual_cost_usd REAL CHECK(actual_cost_usd IS NULL OR actual_cost_usd >= 0),
+            reconciled_cost_usd REAL CHECK(reconciled_cost_usd IS NULL OR reconciled_cost_usd >= 0),
+            started_at TEXT NOT NULL,
+            deadline_at TEXT NOT NULL,
+            completed_at TEXT,
+            updated_at TEXT NOT NULL,
+            deterministic_result TEXT,
+            semantic_result TEXT,
+            comparison_result TEXT,
+            provider_dispatch_ref TEXT,
+            continuation_ref TEXT,
+            UNIQUE(run_id, ordinal),
+            FOREIGN KEY(run_id) REFERENCES revision_runs(run_id),
+            FOREIGN KEY(baseline_version_id) REFERENCES artifact_versions(version_id),
+            FOREIGN KEY(candidate_version_id) REFERENCES artifact_versions(version_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS continuation_capsules (
+            capsule_id TEXT PRIMARY KEY,
+            schema_version TEXT NOT NULL CHECK(schema_version = 'phase10-continuation-v1'),
+            run_id TEXT NOT NULL,
+            state TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            payload_sha256 TEXT NOT NULL UNIQUE,
+            next_action TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            consumed_at TEXT,
+            superseded_by TEXT,
+            consumer_token TEXT,
+            FOREIGN KEY(run_id) REFERENCES revision_runs(run_id),
+            FOREIGN KEY(superseded_by) REFERENCES continuation_capsules(capsule_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS human_decisions (
+            decision_id TEXT PRIMARY KEY,
+            schema_version TEXT NOT NULL CHECK(schema_version = 'phase10-human-decision-v1'),
+            run_id TEXT NOT NULL,
+            gate_kind TEXT NOT NULL,
+            state_fingerprint TEXT NOT NULL,
+            artifact_fingerprint TEXT NOT NULL,
+            finding_set_fingerprint TEXT NOT NULL,
+            option_set_fingerprint TEXT NOT NULL,
+            options_json TEXT NOT NULL,
+            selected_option TEXT,
+            scope_json TEXT NOT NULL,
+            rationale TEXT,
+            decider_label TEXT,
+            decided_at TEXT,
+            expiry_at TEXT NOT NULL,
+            consumed_at TEXT,
+            superseded_at TEXT,
+            FOREIGN KEY(run_id) REFERENCES revision_runs(run_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS revision_transitions (
+            transition_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            ordinal INTEGER NOT NULL,
+            prior_state TEXT NOT NULL,
+            new_state TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            evidence_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(run_id, ordinal),
+            FOREIGN KEY(run_id) REFERENCES revision_runs(run_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_artifact_versions_run_created ON artifact_versions(run_id, created_at);
+        CREATE INDEX IF NOT EXISTS idx_review_findings_run_status ON review_findings(run_id, status);
+        CREATE INDEX IF NOT EXISTS idx_revision_attempts_run_ordinal ON revision_attempts(run_id, ordinal);
+        CREATE INDEX IF NOT EXISTS idx_continuation_capsules_run_created ON continuation_capsules(run_id, created_at);
+        CREATE INDEX IF NOT EXISTS idx_revision_transitions_run_ordinal ON revision_transitions(run_id, ordinal);
+        """,
+    ),
 )
 
 

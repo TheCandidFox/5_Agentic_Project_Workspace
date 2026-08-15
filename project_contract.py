@@ -129,7 +129,12 @@ _POLICY_KEYS = {
     "max runtime seconds": "max_runtime_seconds",
 }
 _SUPPORTED_PROFILES = frozenset(
-    {"offline-checklist-v1", "governed-live-v1", "governed-live-v2"}
+    {
+        "offline-checklist-v1",
+        "governed-live-v1",
+        "governed-live-v2",
+        "governed-revision-v1",
+    }
 )
 _LIVE_REQUIRED_CRITERIA = frozenset({"deliverable-exists", "required-sections"})
 _LIVE_REQUIRED_CONSTRAINTS = frozenset(

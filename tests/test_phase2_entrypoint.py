@@ -85,6 +85,7 @@ def test_entrypoint_runs_offline_suite_and_replays_unchanged_source(tmp_path):
         "0006_project_orchestration",
         "0007_governed_provider_calls",
         "0008_recovery_observability",
+        "0009_bounded_revision_cycle",
     )
     assert second.newly_applied_migrations == ()
     assert all(result.replayed for result in second.suite.results)
