@@ -292,7 +292,18 @@ class RevisionCycle:
                 raise RuntimeError("decision is missing or already recorded")
             run = con.execute("SELECT * FROM revision_runs WHERE run_id=?", (decision["run_id"],)).fetchone()
             current_state_fp = sha256_text(canonical_json({"state": run["state"], "updated_at": run["updated_at"]}))
-            if run["state"] != "HUMAN_DECISION_REQUIRED" or current_state_fp != decision["state_fingerprint"] or expected_state_fingerprint != decision["state_fingerprint"]:
+            findings = [r["fingerprint"] for r in con.execute("SELECT fingerprint FROM review_findings WHERE run_id=? AND status IN ('open','human_pending') ORDER BY criterion_key", (run["run_id"],))]
+            current_artifact_fp = sha256_text(canonical_json({"accepted": run["accepted_version_id"], "candidate": run["candidate_version_id"]}))
+            current_finding_fp = sha256_text(canonical_json(findings))
+            current_option_fp = sha256_text(canonical_json(json.loads(decision["options_json"])))
+            if (
+                run["state"] != "HUMAN_DECISION_REQUIRED"
+                or current_state_fp != decision["state_fingerprint"]
+                or expected_state_fingerprint != decision["state_fingerprint"]
+                or current_artifact_fp != decision["artifact_fingerprint"]
+                or current_finding_fp != decision["finding_set_fingerprint"]
+                or current_option_fp != decision["option_set_fingerprint"]
+            ):
                 raise RuntimeError("human decision is stale")
             if datetime.fromisoformat(decision["expiry_at"]) <= datetime.now(timezone.utc):
                 raise RuntimeError("human decision has expired")
@@ -313,6 +324,37 @@ class RevisionCycle:
                 raise RuntimeError("option has no application-owned transition")
             self._capsule(con, run["run_id"], con.execute("SELECT state FROM revision_runs WHERE run_id=?", (run["run_id"],)).fetchone()["state"], next_action, {"decision_id": decision_id})
             return next_action
+
+    def recover_claim(self, run_id: str, *, dispatch_evidence: str, idempotency_key: str) -> str:
+        """Resolve a crash around dispatch without guessing whether a call occurred."""
+        if dispatch_evidence not in {"not-dispatched", "possibly-dispatched", "response-recorded"}:
+            raise ValueError("invalid dispatch evidence")
+        with self.ledger.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            run = con.execute("SELECT * FROM revision_runs WHERE run_id=?", (run_id,)).fetchone()
+            if not run or run["state"] not in {"REVIEW_CLAIMED", "REVISION_CLAIMED", "RECOVERY_REQUIRED"}:
+                raise RuntimeError("run has no recoverable dispatch claim")
+            role_state = run["state"]
+            if role_state == "RECOVERY_REQUIRED":
+                latest = con.execute("SELECT prior_state FROM revision_transitions WHERE run_id=? AND new_state='RECOVERY_REQUIRED' ORDER BY ordinal DESC LIMIT 1", (run_id,)).fetchone()
+                role_state = "REVIEW_CLAIMED" if not latest or latest["prior_state"] == "REVIEW_CLAIMED" else "REVISION_CLAIMED"
+            if dispatch_evidence == "possibly-dispatched":
+                if run["state"] == "RECOVERY_REQUIRED":
+                    self._transition(con, run_id, "RECOVERY_REQUIRED", "HUMAN_DECISION_REQUIRED", "ambiguous-dispatch", idempotency_key, {})
+                else:
+                    self._transition(con, run_id, run["state"], "HUMAN_DECISION_REQUIRED", "ambiguous-dispatch", idempotency_key, {})
+                self._capsule(con, run_id, "HUMAN_DECISION_REQUIRED", "record_human_decision", {"reason": "ambiguous-dispatch"})
+                return "HUMAN_DECISION_REQUIRED"
+            if dispatch_evidence == "response-recorded":
+                if run["state"] != "RECOVERY_REQUIRED":
+                    self._transition(con, run_id, run["state"], "RECOVERY_REQUIRED", "response-recovery", f"recovery:{idempotency_key}", {})
+                self._capsule(con, run_id, "RECOVERY_REQUIRED", "parse_recorded_response", {"claimed_state": role_state})
+                return "RECOVERY_REQUIRED"
+            if run["state"] != "RECOVERY_REQUIRED":
+                self._transition(con, run_id, run["state"], "RECOVERY_REQUIRED", "known-no-call", f"recovery:{idempotency_key}", {})
+            self._transition(con, run_id, "RECOVERY_REQUIRED", role_state, "redispatch-authorized", idempotency_key, {"proof": "not-dispatched"})
+            self._capsule(con, run_id, role_state, "dispatch_claimed_call", {"proof": "not-dispatched"})
+            return role_state
 
     def reconcile_materialization(self, run_id: str) -> str:
         """Recover a crash between file replacement and ledger acceptance by hash."""
