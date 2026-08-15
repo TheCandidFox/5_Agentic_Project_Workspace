@@ -180,3 +180,37 @@ def test_governed_live_v2_preserves_live_bounds_and_recovery_capacity():
 
     with pytest.raises(ProjectContractError, match="at most 2 no-progress"):
         parse_project_contract(source.replace("Max no progress: `2`", "Max no progress: `3`"))
+
+
+def test_phase9_phase10_live_canary_preserves_feedback_and_safety_contract():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "project"
+        / "phase9_phase10_live_canary_goal.md"
+    ).read_text(encoding="utf-8")
+    contract = parse_project_contract(
+        source, source_path="project/phase9_phase10_live_canary_goal.md"
+    )
+
+    assert contract.policy.profile == "governed-live-v2"
+    assert contract.policy.authority_ceiling == AuthorityLevel.LIVE_NETWORK
+    assert contract.policy.budget_usd == 0.5
+    assert contract.policy.max_tasks == 2
+    assert contract.deliverables[0].path == (
+        "outputs/phase9_phase10_revision_blueprint.md"
+    )
+    assert len(contract.required_content) == 9
+    assert {
+        "finding-contract-actionable",
+        "revision-cycle-bounded",
+        "continuation-context-sufficient",
+        "edge-cases-testable",
+        "extension-boundaries-clean",
+    }.issubset(
+        {criterion.criterion_key for criterion in contract.acceptance_criteria}
+    )
+    assert {
+        "planning-only",
+        "no-paid-failure-injection",
+        "human-authority-preserved",
+    }.issubset({constraint.constraint_key for constraint in contract.constraints})
