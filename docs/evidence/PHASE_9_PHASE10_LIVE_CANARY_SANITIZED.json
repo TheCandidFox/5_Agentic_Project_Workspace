@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "phase9_phase10_live_canary_sanitized",
+  "recorded_at": "2026-08-15T05:55:15.549578+00:00",
+  "baseline": {
+    "branch": "bootstrap/local-execution",
+    "commit": "07d16e5d436b7e9c0b82d79ebcbeaf8cac92657d",
+    "tag": "v0.3-phase9-phase10-canary-ready"
+  },
+  "source_evidence": {
+    "artifact": {
+      "filename": "phase9_phase10_revision_blueprint.md",
+      "sha256": "9a06088710967f424beabff4daaeda951104e801b3cc45d82eb55534d3c77c18",
+      "bytes": 15418,
+      "stored_in_repository": false
+    },
+    "diagnostic_bundle": {
+      "filename": "phase9-live-9191df0d3a84185302bf.json",
+      "sha256": "b57b9b903de9de7fc04d99823bc7545cf709a729b1e4ee81556806bed5702dd3",
+      "stored_in_repository": false
+    },
+    "terminal_log": {
+      "filename": "phase9_phase10_live_canary_20260815T055412Z.log",
+      "sha256": "b1df71ae211a6125534e92a40be1b221d1460bfb03209c4889ee66045be265ea",
+      "stored_in_repository": false
+    }
+  },
+  "run": {
+    "run_id": "phase9-live-9191df0d3a84185302bf",
+    "contract_id": "contract-9191df0d3a84185302bf",
+    "contract_path": "project/phase9_phase10_live_canary_goal.md",
+    "contract_sha256": "9191df0d3a84185302bf999467625403f774df385cd06675e8e7eea25c720bcf",
+    "graph_sha256": "5d1ce3802783654069802b1d825acbcc579d91fa0b0af44475b8f6486a0c61d6",
+    "profile": "governed-live-v2",
+    "status": "completed",
+    "outcome": "PASS",
+    "stop_reason": "acceptance-pass",
+    "started_at": "2026-08-15T05:54:14.535196+00:00",
+    "completed_at": "2026-08-15T05:55:15.513325+00:00",
+    "duration_ms": 60978,
+    "tasks_completed": 2,
+    "tasks_total": 2,
+    "iterations": 2,
+    "no_progress_count": 0,
+    "replay": {
+      "completed_result_replayed": true,
+      "new_provider_calls": 0,
+      "artifact_sha256_stable": true
+    }
+  },
+  "artifact": {
+    "declared_path": "outputs/phase9_phase10_revision_blueprint.md",
+    "media_type": "text/markdown",
+    "bytes": 15418,
+    "sha256": "9a06088710967f424beabff4daaeda951104e801b3cc45d82eb55534d3c77c18"
+  },
+  "provider_calls": [
+    {
+      "task_key": "compose-markdown",
+      "attempt": 1,
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "prompt_template_version": "phase9-compose-v2",
+      "response_schema": "phase9-compose-v2",
+      "status": "completed",
+      "stop_reason": "completed",
+      "input_tokens": 1141,
+      "output_tokens": 3459,
+      "max_output_tokens": 4000,
+      "latency_ms": 40216,
+      "quoted_cost_usd": 0.0756275,
+      "actual_cost_usd": 0.0547375,
+      "prompt_sha256": "cc574c6f9a87db1dbef24c011aee35c41780e6301848a6dde0b9fb8cf72f7912",
+      "response_sha256": "a4caeb9e263edea1cb34c35031dec38e516f3837977a061acf7b1273511d9b7a",
+      "provider_request_id_included": false,
+      "raw_prompt_included": false,
+      "raw_response_included": false
+    },
+    {
+      "task_key": "review-markdown",
+      "attempt": 1,
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "prompt_template_version": "phase9-review-v2",
+      "response_schema": "phase9-review-v2",
+      "status": "completed",
+      "stop_reason": "end_turn",
+      "input_tokens": 7603,
+      "output_tokens": 2277,
+      "max_output_tokens": 5000,
+      "latency_ms": 20481,
+      "quoted_cost_usd": 0.093962,
+      "actual_cost_usd": 0.037976,
+      "prompt_sha256": "19d67fc5a5b292dd5c3b6d83327f95b6ec0292de5b8f7d7b860b9e5179b8654c",
+      "response_sha256": "18866b90ad77baac62e18e2e4db384bc4a2a78ae77b49de5521e619bcc2d027e",
+      "provider_request_id_included": false,
+      "raw_prompt_included": false,
+      "raw_response_included": false
+    }
+  ],
+  "usage_and_cost": {
+    "input_tokens": 8744,
+    "output_tokens": 5736,
+    "total_tokens": 14480,
+    "summed_provider_latency_ms": 60697,
+    "project_budget_usd": 0.5,
+    "quoted_cost_usd": 0.1695895,
+    "actual_cost_usd": 0.0927135,
+    "budget_utilization_percent": 18.5427,
+    "actual_as_percent_of_quote": 54.669,
+    "project_cost_reconciliation_difference_usd": 0.0
+  },
+  "acceptance": {
+    "status": "completed",
+    "outcome": "PASS",
+    "summary": "PASS: 10/10 required criteria pass; hard constraint violations=0",
+    "required_criteria_total": 10,
+    "required_criteria_passed": 10,
+    "hard_constraints_total": 6,
+    "hard_constraints_violated": 0,
+    "criteria": {
+      "artifact-history-safe": "PASS",
+      "continuation-context-sufficient": "PASS",
+      "deliverable-exists": "PASS",
+      "disagreement-human-gated": "PASS",
+      "edge-cases-testable": "PASS",
+      "extension-boundaries-clean": "PASS",
+      "finding-contract-actionable": "PASS",
+      "phase10-feedback-measurable": "PASS",
+      "required-sections": "PASS",
+      "revision-cycle-bounded": "PASS"
+    },
+    "constraints_violated": {
+      "declared-artifact-only": false,
+      "human-authority-preserved": false,
+      "no-external-side-effects": false,
+      "no-paid-failure-injection": false,
+      "planning-only": false,
+      "workspace-confined": false
+    }
+  },
+  "audit": {
+    "verdict": "PASS_WITH_IMPLEMENTATION_AMENDMENTS",
+    "another_phase9_live_canary_required": false,
+    "phase10_code_started": false,
+    "next_gate": "complete deterministic offline Phase 10 implementation and adversarial recovery suite",
+    "human_qualitative_rubric_collected": false,
+    "known_live_coverage": [
+      "normal two-provider handoff",
+      "strict response parsing",
+      "artifact materialization and hashing",
+      "semantic and deterministic acceptance",
+      "cost, usage, latency, and stop-reason capture",
+      "completed replay with zero new provider calls"
+    ],
+    "deferred_to_offline_phase10_fixtures": [
+      "automatic revision",
+      "malformed and conflicting findings",
+      "deterministic versus semantic disagreement",
+      "no progress and regression",
+      "budget, deadline, and attempt exhaustion",
+      "process interruption and cancellation",
+      "stale or tampered continuation context",
+      "ambiguous provider dispatch",
+      "human decision freshness and authority boundaries",
+      "concurrent resume"
+    ]
+  },
+  "redaction": {
+    "excluded": [
+      "credentials and environment variables",
+      "provider request identifiers",
+      "raw prompts",
+      "raw provider responses",
+      "response excerpts",
+      "mutable SQLite ledger",
+      "unrelated runtime events"
+    ]
+  }
+}
