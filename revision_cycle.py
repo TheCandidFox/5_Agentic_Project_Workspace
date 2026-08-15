@@ -19,13 +19,13 @@ TERMINAL = frozenset({"ACCEPTED", "BOUNDED_STOP", "CANCELLED"})
 TRANSITIONS = {
     "INTAKE_VALIDATED": {"BASELINE_PRESERVED"},
     "BASELINE_PRESERVED": {"REVIEW_CLAIMED", "BOUNDED_STOP", "CANCELLED"},
-    "REVIEW_CLAIMED": {"REVIEW_RECORDED", "HUMAN_DECISION_REQUIRED", "RECOVERY_REQUIRED"},
+    "REVIEW_CLAIMED": {"REVIEW_RECORDED", "HUMAN_DECISION_REQUIRED", "RECOVERY_REQUIRED", "CANCELLED"},
     "REVIEW_RECORDED": {"REVISION_PLANNED", "ACCEPTED", "HUMAN_DECISION_REQUIRED", "BOUNDED_STOP"},
-    "REVISION_PLANNED": {"REVISION_CLAIMED", "BOUNDED_STOP"},
+    "REVISION_PLANNED": {"REVISION_CLAIMED", "BOUNDED_STOP", "CANCELLED"},
     "REVISION_CLAIMED": {"CANDIDATE_PRESERVED", "HUMAN_DECISION_REQUIRED", "RECOVERY_REQUIRED", "BOUNDED_STOP"},
-    "CANDIDATE_PRESERVED": {"CANDIDATE_VALIDATED", "HUMAN_DECISION_REQUIRED"},
-    "CANDIDATE_VALIDATED": {"COMPARISON_RECORDED", "HUMAN_DECISION_REQUIRED", "BOUNDED_STOP"},
-    "COMPARISON_RECORDED": {"REVIEW_CLAIMED", "ACCEPTED", "HUMAN_DECISION_REQUIRED", "BOUNDED_STOP"},
+    "CANDIDATE_PRESERVED": {"CANDIDATE_VALIDATED", "HUMAN_DECISION_REQUIRED", "CANCELLED"},
+    "CANDIDATE_VALIDATED": {"COMPARISON_RECORDED", "HUMAN_DECISION_REQUIRED", "BOUNDED_STOP", "CANCELLED"},
+    "COMPARISON_RECORDED": {"REVIEW_CLAIMED", "ACCEPTED", "HUMAN_DECISION_REQUIRED", "BOUNDED_STOP", "CANCELLED"},
     "HUMAN_DECISION_REQUIRED": {"REVISION_PLANNED", "CANCELLED", "BOUNDED_STOP"},
     "RECOVERY_REQUIRED": {"REVIEW_CLAIMED", "REVISION_CLAIMED", "HUMAN_DECISION_REQUIRED", "CANCELLED"},
 }
@@ -122,6 +122,32 @@ class RevisionCycle:
             self._transition(con, run_id, state, "HUMAN_DECISION_REQUIRED", "ambiguous-dispatch", f"ambiguous:{idempotency_key}", {})
             self._capsule(con, run_id, "HUMAN_DECISION_REQUIRED", "record_human_decision", {"reason": "ambiguous-dispatch"})
 
+    def reconcile_dispatch(self, run_id: str, *, quoted_cost_usd: float, actual_cost_usd: float | None, usage_known: bool, idempotency_key: str) -> str:
+        """Settle one reservation exactly once; unknown usage retains it and gates."""
+        if quoted_cost_usd < 0 or (actual_cost_usd is not None and actual_cost_usd < 0):
+            raise ValueError("costs cannot be negative")
+        event_key = f"reconcile:{idempotency_key}"
+        with self.ledger.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            prior = con.execute("SELECT 1 FROM revision_transitions WHERE idempotency_key=?", (event_key,)).fetchone()
+            run = con.execute("SELECT * FROM revision_runs WHERE run_id=?", (run_id,)).fetchone()
+            if not run:
+                raise KeyError(run_id)
+            if prior:
+                return str(run["state"])
+            if not usage_known or actual_cost_usd is None:
+                state = run["state"]
+                if state not in {"REVIEW_CLAIMED", "REVISION_CLAIMED"}:
+                    raise RuntimeError("unknown usage can only gate claimed dispatch")
+                self._transition(con, run_id, state, "HUMAN_DECISION_REQUIRED", "cost-uncertain", event_key, {"retained_reservation_usd": quoted_cost_usd})
+                self._capsule(con, run_id, "HUMAN_DECISION_REQUIRED", "resolve_uncertain_cost", {"reservation_usd": quoted_cost_usd})
+                return "HUMAN_DECISION_REQUIRED"
+            reserved = max(0.0, float(run["reserved_cost_usd"]) - quoted_cost_usd)
+            con.execute("UPDATE revision_runs SET spent_cost_usd=spent_cost_usd+?,reserved_cost_usd=?,updated_at=? WHERE run_id=?", (actual_cost_usd, reserved, utc_now(), run_id))
+            ordinal = con.execute("SELECT COALESCE(MAX(ordinal),0)+1 AS n FROM revision_transitions WHERE run_id=?", (run_id,)).fetchone()["n"]
+            con.execute("INSERT INTO revision_transitions(transition_id,run_id,ordinal,prior_state,new_state,event_type,idempotency_key,evidence_json,created_at) VALUES(?,?,?,?,?,?,?,?,?)", (self._id("transition", f"{run_id}:{event_key}"), run_id, ordinal, run["state"], run["state"], "cost-reconciled", event_key, canonical_json({"quoted_cost_usd": quoted_cost_usd, "actual_cost_usd": actual_cost_usd}), utc_now()))
+            return str(run["state"])
+
     def record_review(self, run_id: str, evaluation_id: str, version_id: str, review: ReviewEnvelope) -> str:
         with self.ledger.connect() as con:
             con.execute("BEGIN IMMEDIATE")
@@ -194,6 +220,123 @@ class RevisionCycle:
             con.execute("UPDATE revision_runs SET accepted_version_id=?,baseline_version_id=?,candidate_version_id=NULL,updated_at=? WHERE run_id=?", (version_id, version_id, utc_now(), run_id))
             self._transition(con, run_id, state, "ACCEPTED", "candidate-accepted", f"accept:{version_id}", {"version_id": version_id, "sha256": row["content_sha256"]})
             self._capsule(con, run_id, "ACCEPTED", "none", {"accepted_version_id": version_id, "accepted_sha256": row["content_sha256"]})
+
+    def compare_candidate(self, run_id: str, *, result: str, evidence: dict[str, Any] | None = None) -> str:
+        if result not in {"improved", "unchanged", "regressed", "incomparable"}:
+            raise ValueError("invalid comparison result")
+        with self.ledger.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            run = con.execute("SELECT * FROM revision_runs WHERE run_id=?", (run_id,)).fetchone()
+            if not run or run["state"] not in {"CANDIDATE_PRESERVED", "CANDIDATE_VALIDATED"}:
+                raise RuntimeError("candidate is not ready for comparison")
+            state = run["state"]
+            if state == "CANDIDATE_PRESERVED":
+                self._transition(con, run_id, state, "CANDIDATE_VALIDATED", "candidate-validated", f"validate:{run_id}:{run['candidate_version_id']}", evidence or {})
+            self._transition(con, run_id, "CANDIDATE_VALIDATED", "COMPARISON_RECORDED", f"comparison-{result}", f"comparison:{run_id}:{run['candidate_version_id']}:{result}", evidence or {})
+            if result in {"regressed", "incomparable"}:
+                self._transition(con, run_id, "COMPARISON_RECORDED", "HUMAN_DECISION_REQUIRED", f"{result}-human-gate", f"comparison-gate:{run_id}:{run['candidate_version_id']}", {})
+                self._capsule(con, run_id, "HUMAN_DECISION_REQUIRED", "record_human_decision", {"reason": result, "candidate_version_id": run["candidate_version_id"]})
+                return "HUMAN_DECISION_REQUIRED"
+            if result == "unchanged":
+                count = int(run["no_progress_count"]) + 1
+                con.execute("UPDATE revision_runs SET no_progress_count=? WHERE run_id=?", (count, run_id))
+                policy = json.loads(run["policy_json"])
+                if count >= policy["max_no_progress"]:
+                    self._transition(con, run_id, "COMPARISON_RECORDED", "BOUNDED_STOP", "no-progress-limit", f"no-progress-limit:{run_id}:{count}", {})
+                    self._capsule(con, run_id, "BOUNDED_STOP", "inspect_no_progress", {"no_progress_count": count})
+                    return "BOUNDED_STOP"
+            self._capsule(con, run_id, "COMPARISON_RECORDED", "claim_review", {"comparison": result})
+            return "COMPARISON_RECORDED"
+
+    def cancel(self, run_id: str, *, reason: str, idempotency_key: str) -> str:
+        if not reason.strip():
+            raise ValueError("cancellation requires a reason")
+        with self.ledger.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            run = con.execute("SELECT * FROM revision_runs WHERE run_id=?", (run_id,)).fetchone()
+            if not run:
+                raise KeyError(run_id)
+            if run["state"] == "CANCELLED":
+                return "CANCELLED"
+            if run["state"] in TERMINAL:
+                raise RuntimeError("terminal run cannot be cancelled")
+            self._transition(con, run_id, run["state"], "CANCELLED", "cancelled", idempotency_key, {"reason": reason})
+            if run["candidate_version_id"]:
+                con.execute("UPDATE artifact_versions SET status='rejected' WHERE version_id=? AND status='candidate'", (run["candidate_version_id"],))
+            self._capsule(con, run_id, "CANCELLED", "resume_after_cancellation", {"reason": reason, "accepted_version_id": run["accepted_version_id"]})
+            return "CANCELLED"
+
+    def create_human_gate(self, run_id: str, *, gate_kind: str, options: Iterable[str], expiry_at: str) -> str:
+        option_list = tuple(options)
+        if not option_list or len(option_list) != len(set(option_list)) or len(option_list) > 8:
+            raise ValueError("human gate requires a unique bounded option set")
+        with self.ledger.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            run = con.execute("SELECT * FROM revision_runs WHERE run_id=?", (run_id,)).fetchone()
+            if not run or run["state"] != "HUMAN_DECISION_REQUIRED":
+                raise RuntimeError("run is not waiting for a human decision")
+            findings = [r["fingerprint"] for r in con.execute("SELECT fingerprint FROM review_findings WHERE run_id=? AND status IN ('open','human_pending') ORDER BY criterion_key", (run_id,))]
+            state_fp = sha256_text(canonical_json({"state": run["state"], "updated_at": run["updated_at"]}))
+            artifact_fp = sha256_text(canonical_json({"accepted": run["accepted_version_id"], "candidate": run["candidate_version_id"]}))
+            finding_fp = sha256_text(canonical_json(findings))
+            option_fp = sha256_text(canonical_json(option_list))
+            decision_id = self._id("decision", f"{run_id}:{gate_kind}:{state_fp}:{option_fp}")
+            con.execute("INSERT INTO human_decisions(decision_id,schema_version,run_id,gate_kind,state_fingerprint,artifact_fingerprint,finding_set_fingerprint,option_set_fingerprint,options_json,scope_json,expiry_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)", (decision_id, "phase10-human-decision-v1", run_id, gate_kind, state_fp, artifact_fp, finding_fp, option_fp, canonical_json(option_list), canonical_json({"authority_expansion": False}), expiry_at))
+            return decision_id
+
+    def record_human_decision(self, decision_id: str, *, selected_option: str, rationale: str, decider_label: str, expected_state_fingerprint: str) -> str:
+        with self.ledger.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            decision = con.execute("SELECT * FROM human_decisions WHERE decision_id=?", (decision_id,)).fetchone()
+            if not decision or decision["decided_at"] is not None:
+                raise RuntimeError("decision is missing or already recorded")
+            run = con.execute("SELECT * FROM revision_runs WHERE run_id=?", (decision["run_id"],)).fetchone()
+            current_state_fp = sha256_text(canonical_json({"state": run["state"], "updated_at": run["updated_at"]}))
+            if run["state"] != "HUMAN_DECISION_REQUIRED" or current_state_fp != decision["state_fingerprint"] or expected_state_fingerprint != decision["state_fingerprint"]:
+                raise RuntimeError("human decision is stale")
+            if datetime.fromisoformat(decision["expiry_at"]) <= datetime.now(timezone.utc):
+                raise RuntimeError("human decision has expired")
+            options = json.loads(decision["options_json"])
+            if selected_option not in options:
+                raise RuntimeError("selected option is outside approved scope")
+            con.execute("UPDATE human_decisions SET selected_option=?,rationale=?,decider_label=?,decided_at=?,consumed_at=? WHERE decision_id=?", (selected_option, rationale, decider_label, utc_now(), utc_now(), decision_id))
+            if selected_option == "cancel":
+                self._transition(con, run["run_id"], "HUMAN_DECISION_REQUIRED", "CANCELLED", "human-cancelled", f"decision:{decision_id}", {})
+                next_action = "close_run"
+            elif selected_option == "stop":
+                self._transition(con, run["run_id"], "HUMAN_DECISION_REQUIRED", "BOUNDED_STOP", "human-stopped", f"decision:{decision_id}", {})
+                next_action = "request_new_authority"
+            elif selected_option == "revise":
+                self._transition(con, run["run_id"], "HUMAN_DECISION_REQUIRED", "REVISION_PLANNED", "human-authorized-revision", f"decision:{decision_id}", {})
+                next_action = "claim_revision"
+            else:
+                raise RuntimeError("option has no application-owned transition")
+            self._capsule(con, run["run_id"], con.execute("SELECT state FROM revision_runs WHERE run_id=?", (run["run_id"],)).fetchone()["state"], next_action, {"decision_id": decision_id})
+            return next_action
+
+    def reconcile_materialization(self, run_id: str) -> str:
+        """Recover a crash between file replacement and ledger acceptance by hash."""
+        with self.ledger.connect() as con:
+            run = con.execute("SELECT * FROM revision_runs WHERE run_id=?", (run_id,)).fetchone()
+            if not run:
+                raise KeyError(run_id)
+            path = self.guard.authorize_write(run["logical_path"], expect_directory=False).path
+            disk_hash = hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+            accepted = con.execute("SELECT content_sha256 FROM artifact_versions WHERE version_id=?", (run["accepted_version_id"],)).fetchone()
+            candidate = None if not run["candidate_version_id"] else con.execute("SELECT content_sha256 FROM artifact_versions WHERE version_id=?", (run["candidate_version_id"],)).fetchone()
+        if accepted and disk_hash == accepted["content_sha256"]:
+            return "accepted-materialization-intact"
+        if candidate and disk_hash == candidate["content_sha256"]:
+            return "candidate-materialized-ledger-pending"
+        return "materialization-mismatch"
+
+    def diagnostic_bundle(self, run_id: str) -> dict[str, Any]:
+        status = self.status(run_id)
+        with self.ledger.connect() as con:
+            transitions = [dict(r) for r in con.execute("SELECT ordinal,prior_state,new_state,event_type,created_at FROM revision_transitions WHERE run_id=? ORDER BY ordinal", (run_id,))]
+            findings = [dict(r) for r in con.execute("SELECT criterion_key,verdict,severity,status,fingerprint FROM review_findings WHERE run_id=? ORDER BY criterion_key", (run_id,))]
+            artifacts = [dict(r) for r in con.execute("SELECT version_id,parent_version_id,content_sha256,byte_count,status,created_at FROM artifact_versions WHERE run_id=? ORDER BY created_at", (run_id,))]
+        return {"schema_version": "phase10-diagnostic-v1", "status": status, "transitions": transitions, "findings": findings, "artifacts": artifacts, "redaction": {"artifact_content": "excluded", "provider_request_ids": "excluded", "environment": "excluded"}}
 
     def consume_capsule(self, capsule_id: str, consumer_token: str) -> dict[str, Any]:
         with self.ledger.connect() as con:
