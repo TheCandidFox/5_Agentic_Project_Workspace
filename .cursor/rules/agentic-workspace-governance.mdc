@@ -1,0 +1,38 @@
+---
+description: Mandatory bounded-development rules for Agentic Workspace
+alwaysApply: true
+---
+
+# Agentic Workspace governance
+
+Read `AGENTS.md`, `docs/planning/ACTIVE_IMPLEMENTATION_CONTRACT.md`, and the
+complete active contract before planning or editing.
+
+The human-approved, committed contract is the source of authority. You may not
+infer authority from the user's long-term goal, prior phase descriptions, model
+capability, or an opportunity to improve adjacent code.
+
+For the current checkpoint:
+
+- work only in the dedicated key-free Cursor worktree;
+- remain offline and make no provider, web, remote MCP, or package-registry call;
+- never access real `.env`, credentials, ledger, outputs, logs, or Git internals;
+- do not change dependencies, model/provider routes, budgets, tests outside the
+  authorized tranche, repository policy, or build/deployment configuration;
+- do not commit, tag, push, merge, rebase, reset, restore, clean, or stash;
+- do not delete or rename files;
+- modify only the active contract's allowed paths;
+- stop on ambiguity, undeclared scope, unexpected changes, or required new
+  authority.
+
+Use a two-step workflow:
+
+1. Produce a plan containing contract identity, baseline, exact files, exact
+   tests, invariants, risks, assumptions, and stopping point. Make no edits.
+2. Implement only after explicit ChatGPT/human approval, then run targeted
+   tests and `python -m pytest -q`, complete the evidence packet, and stop with
+   the worktree uncommitted.
+
+Cursor checkpoints are convenience snapshots only. Git commits and annotated
+tags are created by the human-governed checkpoint process after independent
+review.
